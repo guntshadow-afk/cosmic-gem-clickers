@@ -5,225 +5,613 @@
   <title>Cosmic Clicker</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      margin: 0;
-      font-family: 'Orbitron', sans-serif;
-      background: #0d0d0d;
-      color: #e0e0e0;
+    :root{
+      --bg:#0d0d0d; --panel:#1a1a1a; --text:#e0e0e0; --muted:#bdbdbd;
+      --cyan:#00ffff; --magenta:#ff00ff; --green:#00ff99; --red:#ff3366; --yellow:#ffd166;
     }
-    header {
-      background: #1a1a1a;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-      border-bottom: 2px solid #00ffff;
-      text-transform: uppercase;
-    }
-    nav {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      background: #1a1a1a;
-      border-bottom: 1px solid #333;
-    }
-    nav button {
-      padding: 0.5rem 1rem;
-      margin: 0.25rem;
-      background: #0d0d0d;
-      border: 1px solid #00ffff;
-      color: #00ffff;
-      border-radius: 4px;
-      cursor: pointer;
-      text-transform: uppercase;
-    }
-    nav button:hover {
-      background: #00ffff;
-      color: #0d0d0d;
-      box-shadow: 0 0 10px #00ffff;
-    }
-    .container {
-      display: flex;
-      height: calc(100vh - 140px);
-    }
-    .left-panel {
-      width: 35%;
-      background: #1a1a1a;
-      border-right: 1px solid #333;
-      overflow-y: auto;
-      padding: 1rem;
-    }
-    .right-panel {
-      width: 65%;
-      padding: 2rem;
-      text-align: center;
-    }
-    .panel {
-      display: none;
-      padding: 1rem;
-      background: #0d0d0d;
-      border: 1px solid #333;
-      border-radius: 6px;
-      margin-top: 1rem;
-    }
-    .active { display: block; }
-    .hp-bar {
-      height: 20px;
-      background: #333;
-      border-radius: 10px;
-      margin: 1rem 0;
-      overflow: hidden;
-    }
-    .hp-fill {
-      height: 100%;
-      background: linear-gradient(to right, #00ff99, #ff3366);
-      width: 100%;
-      transition: width 0.3s ease;
-    }
-    .button {
-      padding: 0.5rem 1rem;
-      background: #0d0d0d;
-      border: 1px solid #ff00ff;
-      color: #ff00ff;
-      border-radius: 4px;
-      cursor: pointer;
-      text-transform: uppercase;
-    }
-    .button:hover {
-      background: #ff00ff;
-      color: #0d0d0d;
-      box-shadow: 0 0 10px #ff00ff;
-    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Orbitron',sans-serif;background:var(--bg);color:var(--text)}
+    header{background:var(--panel);padding:0.8rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--cyan);text-transform:uppercase}
+    header .stats{display:flex;gap:1rem;font-size:0.95rem}
+    header .stats span{color:var(--cyan)}
+    nav{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;background:var(--panel);padding:0.5rem;border-bottom:1px solid #333}
+    nav button{padding:0.45rem 0.8rem;background:var(--bg);border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;text-transform:uppercase;font-size:0.85rem}
+    nav button:hover{background:var(--cyan);color:var(--bg);box-shadow:0 0 10px var(--cyan)}
+    .container{display:flex;min-height:calc(100vh - 140px)}
+    .left{width:38%;background:var(--panel);border-right:1px solid #333;overflow-y:auto;padding:1rem}
+    .right{width:62%;padding:1.2rem;text-align:center}
+    .panel{display:none;background:var(--bg);border:1px solid #333;border-radius:8px;padding:0.8rem;margin-bottom:1rem}
+    .panel.active{display:block}
+    .card{background:#111;border:1px solid #333;border-radius:8px;padding:0.6rem;margin:0.5rem 0;box-shadow:0 0 8px rgba(0,255,255,0.1)}
+    .row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem}
+    .btn{padding:0.4rem 0.8rem;background:var(--bg);border:1px solid var(--magenta);color:var(--magenta);border-radius:4px;cursor:pointer;text-transform:uppercase;font-size:0.85rem}
+    .btn:hover{background:var(--magenta);color:var(--bg);box-shadow:0 0 10px var(--magenta)}
+    .btn.cyan{border-color:var(--cyan);color:var(--cyan)} .btn.cyan:hover{background:var(--cyan);color:var(--bg)}
+    .btn.green{border-color:var(--green);color:var(--green)} .btn.green:hover{background:var(--green);color:var(--bg)}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem}
+    .slot{background:#111;border:1px solid #333;border-radius:8px;padding:0.6rem;text-align:left}
+    .slot.active{border-color:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+    .hpbar{height:20px;background:#333;border-radius:10px;overflow:hidden;margin:0.6rem 0}
+    .hpfill{height:100%;background:linear-gradient(to right,var(--green),var(--red));width:100%;transition:width 0.25s ease}
+    #attackBtn{margin-top:0.6rem}
+    .muted{color:var(--muted);font-size:0.9rem}
+    .inline{display:inline-block}
+    .notice{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:#111;border:1px solid var(--cyan);color:var(--text);padding:0.6rem 0.8rem;border-radius:8px;display:none;box-shadow:0 0 10px var(--cyan)}
   </style>
 </head>
 <body>
-  <header>Cosmic Clicker</header>
+  <header>
+    <div>Cosmic Clicker</div>
+    <div class="stats">
+      <div>Gold: <span id="gold">0</span></div>
+      <div>DPS: <span id="dps">0</span></div>
+      <div>Stage: <span id="stage">1</span></div>
+      <div>Chrono Cores: <span id="cores">0</span></div>
+    </div>
+  </header>
 
-  <!-- Navigation Tabs -->
   <nav>
     <button data-tab="heroes">Heroes</button>
     <button data-tab="shop">Shop</button>
     <button data-tab="pets">Pets</button>
-    <button data-tab="quests">Quests</button>
-    <button data-tab="events">Events</button>
-    <button data-tab="achievements">Achievements</button>
-    <button data-tab="stats">Stats</button>
-    <button data-tab="crafting">Crafting</button>
-    <button data-tab="leaderboard">Leaderboard</button>
     <button data-tab="relics">Relics</button>
-    <button data-tab="minigames">Minigames</button>
+    <button data-tab="quests">Quests</button>
+    <button data-tab="achievements">Achievements</button>
+    <button data-tab="crafting">Crafting</button>
+    <button data-tab="stats">Stats</button>
+    <button data-tab="tutorial">Tutorial</button>
+    <button data-tab="daily">Daily</button>
+    <button data-tab="leaderboard">Leaderboard</button>
   </nav>
 
   <div class="container">
-    <!-- Left Panel: Heroes -->
-    <div class="left-panel">
+    <div class="left">
       <div id="heroes" class="panel active">
         <h2>Heroes</h2>
         <div id="heroList"></div>
       </div>
+
       <div id="shop" class="panel">
         <h2>Shop</h2>
-        <p>Buy boosts and consumables.</p>
+        <div class="grid" id="shopGrid"></div>
+        <p class="muted">Shop items grant temporary or permanent boosts. Prices scale with stage.</p>
       </div>
+
       <div id="pets" class="panel">
         <h2>Pets</h2>
-        <p>Unlock companions for passive bonuses.</p>
+        <div id="petList"></div>
       </div>
-      <div id="quests" class="panel">
-        <h2>Quests</h2>
-        <p>Complete daily objectives for rewards.</p>
-      </div>
-      <div id="events" class="panel">
-        <h2>Events</h2>
-        <p>Special cosmic events appear here.</p>
-      </div>
-      <div id="achievements" class="panel">
-        <h2>Achievements</h2>
-        <p>Track milestones and unlock rewards.</p>
-      </div>
-      <div id="stats" class="panel">
-        <h2>Stats</h2>
-        <p>DPS, total gold, enemies defeated.</p>
-      </div>
-      <div id="crafting" class="panel">
-        <h2>Crafting</h2>
-        <p>Forge relics and shards into upgrades.</p>
-      </div>
-      <div id="leaderboard" class="panel">
-        <h2>Leaderboard</h2>
-        <p>Local high scores.</p>
-      </div>
+
       <div id="relics" class="panel">
         <h2>Relics</h2>
-        <p>Equip relics for passive buffs.</p>
+        <div id="relicList" class="grid"></div>
+        <p class="muted">Relics provide passive bonuses when equipped.</p>
       </div>
-      <div id="minigames" class="panel">
-        <h2>Minigames</h2>
-        <p>Play quick challenges for bonus rewards.</p>
+
+      <div id="quests" class="panel">
+        <h2>Quests</h2>
+        <div id="questList"></div>
+      </div>
+
+      <div id="achievements" class="panel">
+        <h2>Achievements</h2>
+        <div id="achList"></div>
+      </div>
+
+      <div id="crafting" class="panel">
+        <h2>Crafting</h2>
+        <div id="craftArea"></div>
+      </div>
+
+      <div id="stats" class="panel">
+        <h2>Stats</h2>
+        <div id="statsArea"></div>
+      </div>
+
+      <div id="tutorial" class="panel">
+        <h2>Tutorial</h2>
+        <div id="tutorialSteps"></div>
+        <button class="btn cyan" id="nextTutorial">Next Step</button>
+      </div>
+
+      <div id="daily" class="panel">
+        <h2>Daily Rewards</h2>
+        <div id="dailyArea"></div>
+        <button class="btn green" id="claimDaily">Claim Daily</button>
+      </div>
+
+      <div id="leaderboard" class="panel">
+        <h2>Leaderboard</h2>
+        <div id="lbArea"></div>
       </div>
     </div>
 
-    <!-- Right Panel: Enemy Battle -->
-    <div class="right-panel">
-      <div class="enemy">
-        <h2>King Bloated Crab</h2>
-        <img src="assets/crab.png" alt="Enemy" style="width:140px" />
-        <div class="hp-bar"><div id="hpFill" class="hp-fill"></div></div>
-        <p>HP: <span id="enemyHP">1000</span></p>
-        <p>Time Left: <span id="timer">30.0</span> sec</p>
-        <p>Gold: <span id="gold">0</span></p>
-        <p>Earned Gold: <span id="earnedGold">0</span></p>
-        <button id="tapButton" class="button">Attack</button>
+    <div class="right">
+      <div class="card">
+        <h2 id="enemyName">King Bloated Crab</h2>
+        <div class="hpbar"><div id="hpFill" class="hpfill"></div></div>
+        <div class="row">
+          <div>HP: <span id="enemyHP">1000</span>/<span id="enemyMax">1000</span></div>
+          <div>Time: <span id="timer">30.0</span>s</div>
+        </div>
+        <div class="row">
+          <div>Earned Gold: <span id="earnedGold">0</span></div>
+          <div>Bosses Defeated: <span id="kills">0</span></div>
+        </div>
+        <button id="attackBtn" class="btn">Attack</button>
+        <button id="prestigeBtn" class="btn cyan" title="Reset for permanent bonus">Prestige</button>
       </div>
+      <p class="muted">Tip: Buy new heroes in the Heroes panel, upgrade them to boost DPS, equip relics, and level pets for multipliers.</p>
     </div>
   </div>
 
+  <div id="notice" class="notice"></div>
+
   <script>
-    let gold = 0;
-    let enemyHP = 1000;
-    let maxHP = 1000;
-    let timer = 30.0;
-    let earnedGold = 0;
+  // -------- State & Save --------
+  const DEFAULT = {
+    gold: 0, cores: 0, stage: 1, kills: 0, earnedGold: 0,
+    enemy: { name: "King Bloated Crab", hp: 1000, max: 1000, timer: 30 },
+    heroes: [
+      { id: "treebeast", name: "Treebeast", baseDps: 10, level: 1, owned: true },
+      { id: "fisher", name: "Wandering Fisherman", baseDps: 15, level: 0, owned: false },
+      { id: "betty", name: "Betty Clicker", baseDps: 25, level: 0, owned: false },
+      { id: "samurai", name: "Masked Samurai", baseDps: 50, level: 0, owned: false },
+      { id: "leon", name: "Leon", baseDps: 90, level: 0, owned: false },
+      { id: "valkyr", name: "Valkyr Sentinel", baseDps: 150, level: 0, owned: false },
+      { id: "nova", name: "Nova Arcanist", baseDps: 300, level: 0, owned: false },
+      { id: "titan", name: "Titan Engineer", baseDps: 600, level: 0, owned: false }
+    ],
+    pets: [
+      { id: "drone", name: "Quantum Drone", level: 0, owned: false, type: "dps", bonus: 0.05 },
+      { id: "sprite", name: "Neon Sprite", level: 0, owned: false, type: "gold", bonus: 0.05 }
+    ],
+    relics: [
+      { id: "sigil", name: "Sigil of Flux", owned: false, equipped: false, type: "dps", bonus: 0.10 },
+      { id: "circuit", name: "Ancient Circuit", owned: false, equipped: false, type: "gold", bonus: 0.10 }
+    ],
+    shop: [
+      { id: "autoclick", name: "Auto-Clicker (60s)", price: 200, type: "buff", effect: "autoclick", duration: 60 },
+      { id: "burst", name: "Burst Damage +100% (30s)", price: 300, type: "buff", effect: "burst", duration: 30 },
+      { id: "freeze", name: "Time Freeze (10s)", price: 250, type: "buff", effect: "freeze", duration: 10 }
+    ],
+    buffs: { autoclick: 0, burst: 0, freeze: 0 },
+    achievements: {},
+    quests: [
+      { id: "q1", text: "Defeat 5 bosses", target: 5, progress: 0, reward: 100, claimed: false },
+      { id: "q2", text: "Own 3 heroes", target: 3, progress: 1, reward: 150, claimed: false }
+    ],
+    crafting: { shards: 0, relicDust: 0 },
+    tutorialStep: 0,
+    lastDaily: null,
+    leaderboard: []
+  };
 
-    const goldDisplay = document.getElementById("gold");
-    const enemyHPDisplay = document.getElementById("enemyHP");
-    const timerDisplay = document.getElementById("timer");
-    const earnedGoldDisplay = document.getElementById("earnedGold");
-    const hpFill = document.getElementById("hpFill");
+  let S = load() || DEFAULT;
 
-    const heroes = [
-      { name: "Treebeast", level: 1, dps: 10 },
-      { name: "Wandering Fisherman", level: 1, dps: 15 },
-      { name: "Betty Clicker", level: 1, dps: 20 },
-      { name: "Masked Samurai", level: 1, dps: 25 },
-      { name: "Leon", level: 1, dps: 30 }
-    ];
+  function save(){ localStorage.setItem("cosmic_save", JSON.stringify(S)); }
+  function load(){ try{ return JSON.parse(localStorage.getItem("cosmic_save")); }catch(e){ return null; } }
 
-    function renderHeroes() {
-      const list = document.getElementById("heroList");
-      list.innerHTML = "";
-      heroes.forEach((hero, index) => {
-        const div = document.createElement("div");
-        div.className = "hero";
-        div.innerHTML = `
-          <h3>${hero.name} (Lv ${hero.level})</h3>
-          <p>DPS: ${hero.dps * hero.level}</p>
-          <button onclick="upgradeHero(${index})">Upgrade (Cost: ${hero.level * 50})</button>
-        `;
-        list.appendChild(div);
-      });
+  // -------- UI Elements --------
+  const el = {
+    gold: document.getElementById("gold"),
+    cores: document.getElementById("cores"),
+    stage: document.getElementById("stage"),
+    kills: document.getElementById("kills"),
+    dps: document.getElementById("dps"),
+    enemyName: document.getElementById("enemyName"),
+    enemyHP: document.getElementById("enemyHP"),
+    enemyMax: document.getElementById("enemyMax"),
+    timer: document.getElementById("timer"),
+    hpFill: document.getElementById("hpFill"),
+    earnedGold: document.getElementById("earnedGold"),
+    heroList: document.getElementById("heroList"),
+    shopGrid: document.getElementById("shopGrid"),
+    petList: document.getElementById("petList"),
+    relicList: document.getElementById("relicList"),
+    questList: document.getElementById("questList"),
+    achList: document.getElementById("achList"),
+    craftArea: document.getElementById("craftArea"),
+    statsArea: document.getElementById("statsArea"),
+    tutorialSteps: document.getElementById("tutorialSteps"),
+    dailyArea: document.getElementById("dailyArea"),
+    lbArea: document.getElementById("lbArea"),
+    notice: document.getElementById("notice"),
+    attackBtn: document.getElementById("attackBtn"),
+    prestigeBtn: document.getElementById("prestigeBtn")
+  };
+
+  // -------- Helpers --------
+  function fmt(n){ return Math.floor(n).toLocaleString(); }
+  function showNotice(msg, ms=2000){
+    el.notice.textContent = msg; el.notice.style.display = "block";
+    setTimeout(()=> el.notice.style.display = "none", ms);
+  }
+
+  // -------- Calculations --------
+  function heroDps(h){ return h.baseDps * Math.max(1, h.level); }
+  function totalHeroDps(){
+    let base = S.heroes.filter(h=>h.owned).reduce((sum,h)=> sum + heroDps(h), 0);
+    let petMul = 1 + S.pets.filter(p=>p.owned && p.type==="dps").reduce((sum,p)=> sum + p.bonus*p.level, 0);
+    let relicMul = 1 + S.relics.filter(r=>r.equipped && r.type==="dps").reduce((sum,r)=> sum + r.bonus, 0);
+    let burstMul = S.buffs.burst>0 ? 2 : 1;
+    return base * petMul * relicMul * burstMul * (1 + S.cores*0.05);
+  }
+  function goldMultiplier(){
+    let petMul = 1 + S.pets.filter(p=>p.owned && p.type==="gold").reduce((sum,p)=> sum + p.bonus*p.level, 0);
+    let relicMul = 1 + S.relics.filter(r=>r.equipped && r.type==="gold").reduce((sum,r)=> sum + r.bonus, 0);
+    return petMul * relicMul;
+  }
+
+  // -------- Rendering --------
+  function renderStats(){
+    el.gold.textContent = fmt(S.gold);
+    el.cores.textContent = fmt(S.cores);
+    el.stage.textContent = fmt(S.stage);
+    el.kills.textContent = fmt(S.kills);
+    el.dps.textContent = fmt(totalHeroDps());
+    el.enemyName.textContent = S.enemy.name;
+    el.enemyHP.textContent = fmt(S.enemy.hp);
+    el.enemyMax.textContent = fmt(S.enemy.max);
+    el.hpFill.style.width = Math.max(0, (S.enemy.hp / S.enemy.max) * 100) + "%";
+    el.timer.textContent = S.enemy.timer.toFixed(1);
+    el.earnedGold.textContent = fmt(S.earnedGold);
+  }
+
+  function heroCost(h){
+    // purchase cost for unowned hero: scales by baseDps * stage
+    const baseBuy = Math.ceil(h.baseDps * 25 * Math.pow(1.12, S.stage-1));
+    // upgrade cost: level^1.25 * baseDps * 10
+    const upg = Math.ceil(Math.pow(Math.max(1,h.level), 1.25) * h.baseDps * 10);
+    return { buy: baseBuy, upgrade: upg };
+  }
+
+  function renderHeroes(){
+    el.heroList.innerHTML = "";
+    S.heroes.forEach((h,i)=>{
+      const c = heroCost(h);
+      const div = document.createElement("div");
+      div.className = "card";
+      const owned = h.owned ? `<span class="inline" style="color:var(--green)">Owned</span>` : `<span class="inline" style="color:var(--red)">Locked</span>`;
+      div.innerHTML = `
+        <div class="row"><strong>${h.name}</strong> ${owned}</div>
+        <div class="row"><span>Level: ${h.level}</span><span>DPS: ${fmt(heroDps(h))}</span></div>
+        <div class="row">
+          ${h.owned
+            ? `<button class="btn" onclick="upgradeHero(${i})">Upgrade (${fmt(c.upgrade)})</button>`
+            : `<button class="btn cyan" onclick="buyHero(${i})">Buy (${fmt(c.buy)})</button>`
+          }
+        </div>
+      `;
+      el.heroList.appendChild(div);
+    });
+  }
+
+  function renderShop(){
+    el.shopGrid.innerHTML = "";
+    S.shop.forEach(item=>{
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.innerHTML = `
+        <div class="row"><strong>${item.name}</strong><span class="muted">Price: ${fmt(item.price)}</span></div>
+        <button class="btn" onclick="buyShop('${item.id}')">Buy</button>
+      `;
+      el.shopGrid.appendChild(slot);
+    });
+  }
+
+  function renderPets(){
+    el.petList.innerHTML = "";
+    S.pets.forEach((p,i)=>{
+      const price = Math.ceil(200 * (i+1) * Math.pow(1.08, p.level));
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <div class="row"><strong>${p.name}</strong><span class="muted">${p.type.toUpperCase()} bonus +${(p.bonus*100).toFixed(0)}%/lvl</span></div>
+        <div class="row"><span>Level: ${p.level}</span><span>${p.owned?'<span style="color:var(--green)">Owned</span>':'<span style="color:var(--red)">Locked</span>'}</span></div>
+        <div class="row">
+          ${p.owned
+            ? `<button class="btn" onclick="levelPet(${i})">Level Up (${fmt(price)})</button>`
+            : `<button class="btn cyan" onclick="buyPet(${i})">Adopt (${fmt(price)})</button>`
+          }
+        </div>
+      `;
+      el.petList.appendChild(div);
+    });
+  }
+
+  function renderRelics(){
+    el.relicList.innerHTML = "";
+    S.relics.forEach((r,i)=>{
+      const slot = document.createElement("div");
+      slot.className = "slot" + (r.equipped ? " active":"");
+      slot.innerHTML = `
+        <div><strong>${r.name}</strong></div>
+        <div class="muted">Type: ${r.type.toUpperCase()} | Bonus: ${(r.bonus*100).toFixed(0)}%</div>
+        <div class="row">
+          ${r.owned ? `<button class="btn cyan" onclick="toggleRelic(${i})">${r.equipped?'Unequip':'Equip'}</button>`
+                    : `<button class="btn" onclick="findRelic(${i})">Find (500)</button>`}
+        </div>
+      `;
+      el.relicList.appendChild(slot);
+    });
+  }
+
+  function renderQuests(){
+    el.questList.innerHTML = "";
+    S.quests.forEach((q,i)=>{
+      const div = document.createElement("div"); div.className="card";
+      const done = q.progress >= q.target;
+      div.innerHTML = `
+        <div class="row"><strong>${q.text}</strong><span>${q.progress}/${q.target}</span></div>
+        <div class="row">
+          ${done && !q.claimed ? `<button class="btn green" onclick="claimQuest(${i})">Claim ${fmt(q.reward)}</button>` : `<span class="muted">${done ? 'Claimed' : 'In Progress'}</span>`}
+        </div>
+      `;
+      el.questList.appendChild(div);
+    });
+  }
+
+  const ACHIEVEMENTS = [
+    { id:"a1", name:"First Blood", desc:"Defeat your first boss.", hint:"Defeat any boss once.", reward:100 },
+    { id:"a2", name:"Collector", desc:"Own 3 heroes.", hint:"Buy heroes in the Heroes panel.", reward:150 },
+    { id:"a3", name:"Gold Hoarder", desc:"Reach 10,000 gold.", hint:"Upgrade DPS and defeat bosses.", reward:200 },
+    { id:"a4", name:"Relic Hunter", desc:"Find a relic.", hint:"Use the Relics panel.", reward:200 },
+    { id:"a5", name:"Pet Parent", desc:"Adopt a pet.", hint:"Adopt in the Pets panel.", reward:150 },
+    // Secret example (no hint)
+    { id:"a_secret", name:"???", desc:"A secret feat awaits.", hint:"", reward:500, secret:true }
+  ];
+
+  function renderAchievements(){
+    el.achList.innerHTML = "";
+    ACHIEVEMENTS.forEach(a=>{
+      const owned = !!S.achievements[a.id];
+      const div = document.createElement("div"); div.className="card";
+      div.innerHTML = `
+        <div><strong>${a.name}</strong> ${owned?'<span style="color:var(--green)">Completed</span>':''}</div>
+        <div class="muted">${a.desc}</div>
+        ${a.secret ? '' : `<div class="muted">How: ${a.hint}</div>`}
+        ${owned ? '' : `<button class="btn green" onclick="claimAchievement('${a.id}')">Claim if met</button>`}
+      `;
+      el.achList.appendChild(div);
+    });
+  }
+
+  function renderCrafting(){
+    el.craftArea.innerHTML = `
+      <div class="row"><span>Shards: ${fmt(S.crafting.shards)}</span><span>Relic Dust: ${fmt(S.crafting.relicDust)}</span></div>
+      <button class="btn" onclick="craftShard()">Craft Shard (Cost: 100 gold)</button>
+      <button class="btn cyan" onclick="refineDust()">Refine Dust (Cost: 1 shard)</button>
+    `;
+  }
+
+  function renderStatsPanel(){
+    const stats = `
+      <div class="row"><span>Total Gold Earned</span><span>${fmt(S.earnedGold)}</span></div>
+      <div class="row"><span>Bosses Defeated</span><span>${fmt(S.kills)}</span></div>
+      <div class="row"><span>Current DPS</span><span>${fmt(totalHeroDps())}</span></div>
+      <div class="row"><span>Heroes Owned</span><span>${fmt(S.heroes.filter(h=>h.owned).length)}</span></div>
+      <div class="row"><span>Pets Owned</span><span>${fmt(S.pets.filter(p=>p.owned).length)}</span></div>
+      <div class="row"><span>Relics Owned</span><span>${fmt(S.relics.filter(r=>r.owned).length)}</span></div>
+    `;
+    el.statsArea.innerHTML = stats;
+  }
+
+  const TUTORIAL = [
+    "Welcome! Attack the enemy to earn gold.",
+    "Buy your next hero in Heroes panel.",
+    "Upgrade heroes to increase DPS.",
+    "Visit Shop for temporary boosts.",
+    "Adopt a pet for multipliers.",
+    "Find and equip a relic for passive bonuses.",
+    "Claim your Daily Reward!",
+    "Complete quests for extra gold.",
+    "Prestige to gain permanent cores when ready."
+  ];
+
+  function renderTutorial(){
+    el.tutorialSteps.innerHTML = `<p>${TUTORIAL[Math.min(S.tutorialStep, TUTORIAL.length-1)]}</p>`;
+  }
+
+  function renderDaily(){
+    const today = new Date().toDateString();
+    const canClaim = S.lastDaily !== today;
+    el.dailyArea.textContent = canClaim ? "Daily available: 500 gold + 1 shard" : "Already claimed today.";
+  }
+
+  function renderLeaderboard(){
+    const arr = (S.leaderboard||[]).slice().sort((a,b)=>b.score-a.score).slice(0,10);
+    el.lbArea.innerHTML = arr.length ? arr.map((r,i)=>`<div class="row"><span>${i+1}. ${r.name}</span><span>${fmt(r.score)}</span></div>`).join("") : "<p class='muted'>No scores yet.</p>";
+  }
+
+  // -------- Actions --------
+  function buyHero(i){
+    const h = S.heroes[i]; const c = heroCost(h).buy;
+    if(S.gold>=c){ S.gold-=c; h.owned=true; h.level=1; showNotice(`Bought ${h.name}`); renderHeroes(); renderStats(); save(); }
+    else showNotice("Not enough gold");
+    updateQuestProgress();
+  }
+  function upgradeHero(i){
+    const h = S.heroes[i]; if(!h.owned) return;
+    const c = heroCost(h).upgrade;
+    if(S.gold>=c){ S.gold-=c; h.level++; renderHeroes(); renderStats(); save(); }
+    else showNotice("Not enough gold");
+  }
+
+  function buyShop(id){
+    const item = S.shop.find(x=>x.id===id); if(!item) return;
+    if(S.gold>=item.price){ S.gold-=item.price; S.buffs[id] = Math.max(S.buffs[id], item.duration); showNotice(`${item.name} activated`); renderStats(); save(); }
+    else showNotice("Not enough gold");
+  }
+
+  function buyPet(i){
+    const p = S.pets[i];
+    const price = Math.ceil(200 * (i+1) * Math.pow(1.08, Math.max(1,p.level)));
+    if(S.gold>=price){ S.gold-=price; p.owned=true; p.level=Math.max(1,p.level); renderPets(); renderStats(); save(); }
+    else showNotice("Not enough gold");
+    updateQuestProgress();
+  }
+  function levelPet(i){
+    const p=S.pets[i];
+    const price = Math.ceil(200 * (i+1) * Math.pow(1.08, p.level));
+    if(S.gold>=price){ S.gold-=price; p.level++; renderPets(); renderStats(); save(); }
+    else showNotice("Not enough gold");
+  }
+
+  function findRelic(i){
+    const r=S.relics[i];
+    if(S.gold>=500){ S.gold-=500; r.owned=true; showNotice(`Found ${r.name}`); renderRelics(); renderStats(); save(); }
+    else showNotice("Not enough gold");
+  }
+  function toggleRelic(i){
+    const r=S.relics[i]; if(!r.owned) return;
+    r.equipped = !r.equipped; renderRelics(); renderStats(); save();
+  }
+
+  function claimQuest(i){
+    const q=S.quests[i]; if(q.progress>=q.target && !q.claimed){ S.gold+=q.reward; S.earnedGold+=q.reward; q.claimed=true; showNotice(`Quest rewarded ${fmt(q.reward)} gold`); renderQuests(); renderStats(); save(); }
+  }
+
+  function craftShard(){
+    if(S.gold>=100){ S.gold-=100; S.crafting.shards++; showNotice("+1 Shard"); renderCrafting(); renderStats(); save(); }
+    else showNotice("Not enough gold");
+  }
+  function refineDust(){
+    if(S.crafting.shards>=1){ S.crafting.shards--; S.crafting.relicDust++; showNotice("+1 Relic Dust"); renderCrafting(); save(); }
+    else showNotice("Not enough shards");
+  }
+
+  function claimAchievement(id){
+    const a = ACHIEVEMENTS.find(x=>x.id===id); if(!a) return;
+    if(checkAchievement(id) && !S.achievements[id]){
+      S.achievements[id] = true; S.gold += a.reward; S.earnedGold += a.reward;
+      showNotice(`Achievement: ${a.name} +${fmt(a.reward)} gold`);
+      renderAchievements(); renderStats(); save();
+    }else showNotice("Requirement not met");
+  }
+
+  function checkAchievement(id){
+    switch(id){
+      case "a1": return S.kills>=1;
+      case "a2": return S.heroes.filter(h=>h.owned).length>=3;
+      case "a3": return S.gold>=10000 || S.earnedGold>=10000;
+      case "a4": return S.relics.some(r=>r.owned);
+      case "a5": return S.pets.some(p=>p.owned);
+      case "a_secret": return S.cores>=3; // secret, no hint
+      default: return false;
     }
+  }
 
-    function upgradeHero(i) {
-      const cost = heroes[i].level * 50;
-      if (gold >= cost) {
-        gold -= cost;
-        heroes[i].level++;
-        renderHeroes();
-        updateGold();
-      }
+  // -------- Combat & Loop --------
+  function reward(){
+    const base = Math.ceil(100 * Math.pow(1.1, S.stage-1));
+    const gain = Math.ceil(base * goldMultiplier());
+    S.gold += gain; S.earnedGold += gain; S.kills++;
+    // Progress stage every 5 kills
+    if(S.kills % 5 === 0){ S.stage++; scaleEnemy(); showNotice(`Advanced to Stage ${S.stage}`); }
+    renderStats(); updateQuestProgress(); save();
+  }
+
+  function scaleEnemy(){
+    const base = 1000 * Math.pow(1.25, S.stage-1);
+    S.enemy.max = Math.ceil(base);
+    S.enemy.hp = S.enemy.max;
+    S.enemy.timer = 30;
+    S.enemy.name = (S.stage % 5 === 0) ? "Boss: Chrono Warden" : "King Bloated Crab";
+  }
+
+  function attack(clickDamage=50){
+    const burst = S.buffs.burst>0 ? 2 : 1;
+    S.enemy.hp -= clickDamage * burst;
+    if(S.enemy.hp <= 0){ reward(); scaleEnemy(); }
+    renderStats(); save();
+  }
+
+  function prestige(){
+    if(S.stage>=10){
+      const gain = Math.floor(S.stage/10);
+      S.cores += gain;
+      S.gold = 0; S.earnedGold = 0; S.kills = 0; S.stage = 1;
+      S.heroes.forEach(h=>{ if(h.id!=="treebeast"){ h.owned=false; h.level=0; } else { h.owned=true; h.level=1; }});
+      S.enemy = { name: "King Bloated Crab", hp: 1000, max: 1000, timer: 30 };
+      showNotice(`Prestige! +${gain} cores (permanent DPS bonus)`);
+      renderAll(); save();
+    } else {
+      showNotice("Reach Stage 10 to prestige");
     }
+  }
 
-    function updateGold() { goldDisplay.textContent = gold; }
-    function updateEnemy() {
-      enemyHPDisplay.textContent = Math
+  // Main tick
+  setInterval(()=>{
+    // Buff countdowns
+    ["autoclick","burst","freeze"].forEach(k=>{ if(S.buffs[k]>0) S.buffs[k]-=0.1; });
+    // Damage and timer
+    const dps = totalHeroDps();
+    if(S.buffs.freeze<=0){ S.enemy.timer -= 0.1; }
+    S.enemy.hp -= dps/10;
+    if(S.enemy.hp <= 0){ reward(); scaleEnemy(); }
+    if(S.enemy.timer <= 0){ // fail: respawn enemy and lose small gold
+      scaleEnemy();
+      showNotice("Enemy escaped! New target.");
+    }
+    renderStats();
+  },100);
+
+  // Auto-click if buff active
+  setInterval(()=>{ if(S.buffs.autoclick>0) attack(20); }, 200);
+
+  // -------- Tutorial & Daily --------
+  document.getElementById("nextTutorial").addEventListener("click", ()=>{
+    S.tutorialStep = Math.min(S.tutorialStep+1, TUTORIAL.length-1);
+    renderTutorial(); save();
+  });
+
+  document.getElementById("claimDaily").addEventListener("click", ()=>{
+    const today = new Date().toDateString();
+    if(S.lastDaily !== today){
+      S.gold += 500; S.crafting.shards += 1; S.lastDaily = today;
+      showNotice("Daily claimed: +500 gold, +1 shard");
+      renderDaily(); renderStats(); save();
+    } else showNotice("Already claimed today");
+  });
+
+  function updateQuestProgress(){
+    S.quests.forEach(q=>{
+      if(q.id==="q1") q.progress = S.kills;
+      if(q.id==="q2") q.progress = S.heroes.filter(h=>h.owned).length;
+    });
+    renderQuests();
+  }
+
+  // -------- Events --------
+  el.attackBtn.addEventListener("click", ()=> attack(50));
+  el.prestigeBtn.addEventListener("click", prestige);
+
+  // Tabs
+  document.querySelectorAll("nav button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+      document.getElementById(b.dataset.tab).classList.add("active");
+    });
+  });
+
+  // Initial render
+  function renderAll(){
+    renderStats(); renderHeroes(); renderShop(); renderPets(); renderRelics();
+    renderQuests(); renderAchievements(); renderCrafting(); renderStatsPanel();
+    renderTutorial(); renderDaily(); renderLeaderboard();
+  }
+  renderAll();
+
+  // Save on unload
+  window.addEventListener("beforeunload", save);
+
+  // Record leaderboard on prestige or manually when reaching milestones
+  function pushLeaderboard(name="Player"){
+    const score = S.stage*1000 + totalHeroDps();
+    S.leaderboard.push({ name, score });
+    save(); renderLeaderboard();
+  }
+  </script>
+</body>
+</html>
