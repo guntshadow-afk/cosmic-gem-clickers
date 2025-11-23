@@ -1,34 +1,64 @@
-const CACHE_NAME = 'cosmic-clicker-cache-v3';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './service-worker.js'
+// service-worker.js
+const CACHE_NAME = "cosmic-clicker-cache-v1";
+const urlsToCache = [
+  "/",
+  "/index.html",
+  "/style.css",
+  "/main.js",
+  "/systems.js",
+  "/ui.js",
+  "/manifest.json",
+  "/assets/mascot.png",
+  "/audio/background.mp3",
+  "/audio/tap.mp3",
+  "/audio/mascot-chime.mp3",
+  "/icons/icon-48.png",
+  "/icons/icon-96.png",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/data/upgrades.json",
+  "/data/items.json",
+  "/data/achievements.json",
+  "/data/events.json"
 ];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
+// Install SW and cache files
+self.addEventListener("install", event => {
+  event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS);
-    }).then(() => self.skipWaiting())
+      return cache.addAll(urlsToCache);
+    })
   );
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(self.clients.claim());
+// Activate SW and clean old caches
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(name => {
+          if (name !== CACHE_NAME) {
+            return caches.delete(name);
+          }
+        })
+      );
+    })
+  );
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if(cached) return cached;
-      return fetch(e.request).then(resp => {
-        // optionally cache new requests
-        return resp;
-      }).catch(()=> {
-        // offline fallback: return index.html for navigation requests
-        if(e.request.mode === 'navigate') return caches.match('./index.html');
-      });
+// Fetch handler
+self.addEventListener("fetch", event => {
+  event.respondWith(
+    caches.match(event.request).then(response => {
+      return (
+        response ||
+        fetch(event.request).then(fetchResponse => {
+          return caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, fetchResponse.clone());
+            return fetchResponse;
+          });
+        })
+      );
     })
   );
 });
