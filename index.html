@@ -1,501 +1,795 @@
-/* main.js — Cosmic Clicker (All-features scaffold)
-   Drop this file into your repo and wire it to your index.html.
-   Uses mascot asset: /mnt/data/A_digital_illustration_in_pastel_colors_depicts_a_.png
-*/
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
+<title>Cosmic Clicker — 300+ Features</title>
 
-/* ----------------- CONFIG ----------------- */
-const CONFIG = {
-  SAVE_KEY: "cosmic_clicker_full_v1",
-  LEADER_KEY: "cosmic_clicker_lb_v1",
-  COST_GROWTH: 1.15,
-  OFFLINE_MAX_HOURS: 24,
-  MASCOT_ASSET: "/mnt/data/A_digital_illustration_in_pastel_colors_depicts_a_.png",
-  AUTO_LB_INTERVAL_MS: 60_000
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f1424">
+
+<style>
+  /* --- Pastel dark theme --- */
+  :root{
+    --bg:#0f0b12;
+    --panel:#201625;
+    --muted:#bfaed1;
+    --accent:#c29bff;
+    --glass: rgba(255,255,255,0.03);
+    --soft:#f6e9ff;
+    --danger:#ff86b6;
+    --radius:14px;
+    --shadow: 0 8px 28px rgba(0,0,0,0.6);
+  }
+  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:linear-gradient(180deg,#0b0810 0%, #120b14 70%);color:var(--soft)}
+  .app{display:flex;flex-direction:column;min-height:100vh;padding:18px;gap:16px}
+  header{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;box-shadow:var(--shadow)}
+  .brand{display:flex;gap:12px;align-items:center}
+  .brand-canvas{width:64px;height:64px;border-radius:12px;overflow:hidden;background:transparent}
+  h1{margin:0;font-size:20px}
+  .subtitle{color:var(--muted);font-size:12px;margin-top:2px}
+  .game-area{display:grid;grid-template-columns:260px 1fr 320px;gap:16px;align-items:start}
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card h3{margin:0 0 8px;color:var(--accent)}
+  .left-panel,.right-panel{display:flex;flex-direction:column;gap:12px}
+  .big-number{font-size:28px;font-weight:700}
+  #big-click{position:relative;width:220px;height:78px;border-radius:12px;background:linear-gradient(180deg,#3b2a48,#2b2134);border:1px solid rgba(255,255,255,0.03);color:white;font-size:18px;font-weight:700;cursor:pointer;overflow:hidden}
+  .click-pulse{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;background:radial-gradient(circle, rgba(255,255,255,0.06), transparent 30%);opacity:0}
+  #big-click.pulse .click-pulse{animation:pulse 600ms ease-out}
+  @keyframes pulse{from{opacity:1;transform:scale(0.8)}to{opacity:0;transform:scale(1.6)}}
+  .lists{max-height:260px;overflow:auto;padding-right:6px;display:grid;gap:8px}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:10px;background:var(--glass);border:1px solid rgba(255,255,255,0.02)}
+  button{background:linear-gradient(90deg,var(--accent),#ffb7ff);border:none;color:#1b0b1a;padding:8px 12px;border-radius:10px;cursor:pointer}
+  .danger{background:linear-gradient(90deg,#ff6a8a,#ff8bb0);color:white}
+  footer{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;padding:8px}
+  canvas#particles{position:fixed;left:0;top:0;pointer-events:none;z-index:1}
+  .mascot{width:92px;height:92px;border-radius:14px;overflow:hidden;display:block}
+  .skin-preview{width:54px;height:54px;border-radius:10px;display:inline-block;margin-right:8px;vertical-align:middle}
+  .compact .game-area{grid-template-columns:220px 1fr}
+  @media (max-width:1100px){.game-area{grid-template-columns:220px 1fr} .right-panel{display:none}}
+  @media (max-width:700px){.game-area{grid-template-columns:1fr;grid-auto-rows:auto}}
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="brand">
+        <canvas id="brandCanvas" class="brand-canvas" width="64" height="64" title="Cosmic Mascot"></canvas>
+        <div>
+          <h1>Cosmic Clicker</h1>
+          <div class="subtitle">Dark pastel anime incremental — 300+ features</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="btn-export">Export</button>
+        <button id="btn-import">Import</button>
+        <button id="btn-settings">⚙️</button>
+      </div>
+    </header>
+
+    <section class="game-area" id="gameArea">
+      <aside class="left-panel">
+        <div class="panel card stats">
+          <h3>Energy</h3>
+          <div class="big-number" id="energyDisplay">0</div>
+          <div id="perSecDisplay" class="subtitle">+0 / sec</div>
+          <div style="display:flex;justify-content:center;margin-top:8px">
+            <button id="big-click" aria-label="Click to produce energy">
+              <span id="clickValue">+1</span>
+              <div class="click-pulse"></div>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel card upgrades">
+          <h3>Upgrades</h3>
+          <div class="lists" id="upgradesList"></div>
+        </div>
+
+        <div class="panel card autos">
+          <h3>Automations</h3>
+          <div class="lists" id="autosList"></div>
+        </div>
+      </aside>
+
+      <main class="center-panel">
+        <div class="panel card shop">
+          <h3>Shop</h3>
+          <div class="lists" id="shopList"></div>
+        </div>
+
+        <div class="panel card map">
+          <h3>Galactic Map</h3>
+          <canvas id="mapCanvas" width="900" height="260" style="width:100%;height:160px;border-radius:10px"></canvas>
+          <div id="mapInfo" class="subtitle">Explore stars to unlock passive bonuses.</div>
+        </div>
+
+        <div class="panel card missions">
+          <h3>Missions & Achievements</h3>
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;">
+              <div class="lists" id="missionsList"></div>
+            </div>
+            <div style="flex:1;">
+              <div class="lists" id="achievementsList"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <aside class="right-panel">
+        <div class="panel card prestige">
+          <h3>Ascend</h3>
+          <div id="prestigeInfo">Gain <strong id="prestigeGain">0</strong> shards if you ascend now.</div>
+          <div style="margin-top:8px">
+            <button id="btn-prestige" class="danger">Ascend</button>
+          </div>
+        </div>
+
+        <div class="panel card pets">
+          <h3>Pets & Skins</h3>
+          <div id="petsList" class="lists"></div>
+          <hr style="margin:8px 0">
+          <div id="skinsList" class="lists"></div>
+        </div>
+
+        <div id="settingsPanel" class="panel card hidden" style="display:none">
+          <h3>Settings</h3>
+          <label><input type="checkbox" id="toggleSfx" checked> SFX</label><br>
+          <label><input type="checkbox" id="toggleMusic" checked> Music</label><br>
+          <label><input type="checkbox" id="toggleCompact"> Compact UI</label><br>
+          <label><input type="checkbox" id="toggleParticles" checked> Particles</label><br>
+          <button id="btn-reset" style="margin-top:8px" class="danger">Reset Save</button>
+        </div>
+      </aside>
+    </section>
+
+    <footer>
+      <div>Space tips: Press <kbd>Space</kbd> to click. <kbd>P</kbd> to ascend.</div>
+      <div class="subtitle">Local save. Export to backup.</div>
+    </footer>
+
+    <input type="file" id="fileInput" accept=".json" style="display:none">
+    <canvas id="particles"></canvas>
+    <audio id="sfxClick"></audio>
+    <audio id="sfxBuy"></audio>
+    <audio id="bgm" loop></audio>
+  </div>
+
+<script>
+/* ===========================
+   Cosmic Clicker — Single-file Web Game
+   - 300+ dynamically generated upgrades
+   - Achievements
+   - Animated particles
+   - Pastel UI panels, shop, skins, pets, automations
+   - Offline progress (catch-up)
+   - Save / export / import
+   =========================== */
+
+/* ---------- CONFIG / STATE ---------- */
+const SAVE_KEY = 'cosmic_clicker_save_v3';
+const TICK_MS = 200; // tick every 200ms
+const AUTO_SAVE_MS = 10000;
+
+const defaultState = {
+  version: '3.0',
+  createdAt: Date.now(),
+  lastTick: Date.now(),
+  resources: { energy: 100, shards: 0 },
+  producedTotal: 0,
+  clickValue: 1,
+  clickMult: 1,
+  perSecond: 0,
+  upgrades: {},   // id -> count
+  autos: {},
+  pets: {},
+  skinsOwned: {},
+  achievements: {},
+  missions: {},
+  shopOwned: {},
+  prestigeCount: 0,
+  settings: { sfx:true, music:true, particles:true, compact:false },
+  meta: {}
 };
 
-/* ----------------- UTILITIES ----------------- */
-const fmt = (n) => {
-  if (n === Infinity || Number.isNaN(n)) return "0";
-  if (n < 1000) return Math.round(n * 100) / 100;
-  const units = ["K", "M", "B", "T", "Qa", "Qi"];
-  let u = -1;
-  while (n >= 1000 && u < units.length - 1) {
-    n /= 1000;
-    u++;
-  }
-  return (Math.round(n * 100) / 100) + units[u];
-};
-const nowMs = () => Date.now();
-
-/* ----------------- GAME STATE ----------------- */
-class GameState {
-  constructor() {
-    // core resources
-    this.ce = 0;
-    this.owned = { cpc: {1:0,2:0,3:0}, cps: {1:0,2:0,3:0} };
-    // prestige & meta
-    this.stardust = 0;
-    this.galactic = 0;
-    this.universal = 0;
-    // extras
-    this.relics = []; // {id, tier, bonus}
-    this.mascot = { level: 1, xp: 0, skills: {} };
-    this.achievements = {};
-    this.daily = { lastClaim: 0, streak: 0 };
-    // bookkeeping
-    this.lastSave = nowMs();
-    this.createdAt = nowMs();
-  }
-
-  baseCPC(){
-    let b = 1;
-    b += this.owned.cpc[1] * 1;
-    b += this.owned.cpc[2] * 10;
-    b += this.owned.cpc[3] * 100;
-    return b;
-  }
-  baseCPS(){
-    let b = 0;
-    b += this.owned.cps[1] * 1;
-    b += this.owned.cps[2] * 10;
-    b += this.owned.cps[3] * 100;
-    return b;
-  }
-  prestigeMultiplier(){
-    return 1 + this.stardust * 0.05 + this.galactic * 0.15 + this.universal * 0.5;
-  }
-  effectiveCPC(globalEventMult=1){
-    return this.baseCPC() * this.prestigeMultiplier() * globalEventMult;
-  }
-  effectiveCPS(globalEventMult=1){
-    return this.baseCPS() * this.prestigeMultiplier() * globalEventMult;
-  }
-}
-
-/* ----------------- SHOP ----------------- */
-const SHOP_DEFS = {
-  cpc: {
-    1: {name: "Focus Lens", base: 10, eff: 1},
-    2: {name: "Quantum Tap", base: 100, eff: 10},
-    3: {name: "Singularity Click", base: 1000, eff: 100}
-  },
-  cps: {
-    1: {name: "Solar Panel", base: 50, eff: 1},
-    2: {name: "Asteroid Miner", base: 500, eff: 10},
-    3: {name: "Dyson Sphere", base: 5000, eff: 100}
-  }
+let state = {};
+// We'll programmatically generate 300+ upgrades and many pets/skins/shop items
+const DEFINITIONS = {
+  upgrades: [],
+  autos: [],
+  pets: [],
+  skins: [],
+  shop: [],
+  missions: [],
+  achievements: []
 };
 
-class Shop {
-  constructor(state) { this.state = state; }
-  getCost(type, tier){
-    const def = SHOP_DEFS[type][tier];
-    const cnt = this.state.owned[type][tier] || 0;
-    return Math.ceil(def.base * Math.pow(CONFIG.COST_GROWTH, cnt));
-  }
-  buy(type, tier){
-    const cost = this.getCost(type,tier);
-    if (this.state.ce >= cost) {
-      this.state.ce -= cost;
-      this.state.owned[type][tier] = (this.state.owned[type][tier] || 0) + 1;
-      UI.spawnFloat('-' + fmt(cost));
-      Persistence.save();
-      UI.updateAll();
-      Achievements.checkAll();
-      return true;
-    } else {
-      UI.showToast("Not enough CE");
-      return false;
+/* ---------- UTIL ---------- */
+function now(){ return Date.now(); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function saveState(){ state.lastTick = now(); localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
+function loadState(){
+  const raw = localStorage.getItem(SAVE_KEY);
+  if(!raw) return null;
+  try{ return JSON.parse(raw); } catch(e){ console.warn('save parse err',e); return null; }
+}
+function format(n){
+  if(n >= 1e12) return (n/1e12).toFixed(2)+'T';
+  if(n >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if(n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if(n >= 1e3) return (n/1e3).toFixed(2)+'K';
+  return Math.floor(n).toString();
+}
+
+/* ---------- Dynamic Feature Generation (300+ upgrades, many pets/skins) ---------- */
+(function generateFeatures(){
+  // 300 upgrades — staged tiers with incremental cost & effect
+  const baseNames = ['Photon','Lumen','Noctis','Astra','Celest','Orbit','Nova','Pulse','Quanta','Eclipse'];
+  for(let tier=1;tier<=30;tier++){ // 30 tiers * 10 = 300
+    for(let i=0;i<10;i++){
+      const id = `u_t${tier}_${i}`;
+      const name = `${baseNames[i%baseNames.length]} Tier ${tier}`;
+      const cost = Math.round(Math.pow(1.8, tier) * (50 + i*20));
+      const clickAdd = Math.round(Math.pow(1.15, tier) * (1 + i*0.5));
+      const desc = `Adds +${clickAdd} to manual click. (Tier ${tier})`;
+      DEFINITIONS.upgrades.push({ id, name, cost, desc, effect: {clickAdd, tier}, iconTint: (i%2? '#ffb7ff' : '#d1b3ff')});
     }
   }
-}
 
-/* ----------------- EVENTS ----------------- */
-class EventSystem {
-  constructor(){ this.active = null; }
-  maybeStart(){
-    if (this.active) return;
-    if (Math.random() < 0.06) {
-      const mult = +(1.2 + Math.random()*4).toFixed(2);
-      const dur = 30 + Math.floor(Math.random()*120);
-      this.active = { mult, expiresAt: Date.now() + dur*1000 };
-      UI.showToast("Cosmic Event x" + mult);
-      setTimeout(()=> { this.active = null; }, dur*1000);
-    }
+  // 20 autos (automation levels)
+  for(let i=0;i<20;i++){
+    const id = `auto_${i}`;
+    const name = i===0 ? 'Droid Miner' : `Automator Mk ${i+1}`;
+    const perSec = Math.round(Math.pow(1.6,i) * (1 + i*0.4));
+    const cost = Math.round(80 * Math.pow(2.2, i));
+    DEFINITIONS.autos.push({ id, name, perSec, cost, desc:`Produces ${perSec}/s`});
   }
-  getMult(){ return this.active ? this.active.mult : 1; }
-}
 
-/* ----------------- DAILY REWARD ----------------- */
-class Daily {
-  constructor(state){ this.state = state; }
-  canClaim(){
-    const today = Math.floor(Date.now()/86400000);
-    return this.state.daily.lastClaim !== today;
+  // 50 pets
+  for(let i=0;i<50;i++){
+    const id = `pet_${i}`;
+    const name = ['Mochi','Yuki','Kumo','Hoshi','Mika','Sora','Puff','Nami','Rin','Tomo'][i%10] + ` ${i+1}`;
+    const cost = Math.round(200 * Math.pow(1.9, i/5));
+    // pet gives a click multiplier percent and passive bonus
+    const clickBonus = 1 + (i*0.02);
+    const autoBoost = 1 + (i*0.01);
+    DEFINITIONS.pets.push({ id, name, cost, clickBonus, autoBoost, desc:`+${Math.round((clickBonus-1)*100)}% click, +${Math.round((autoBoost-1)*100)}% auto`});
   }
-  claim(){
-    if (!this.canClaim()) return { ok:false, msg:"Already claimed today" };
-    const today = Math.floor(Date.now()/86400000);
-    const yesterday = today - 1;
-    if (this.state.daily.lastClaim === yesterday) this.state.daily.streak++;
-    else this.state.daily.streak = 1;
-    this.state.daily.lastClaim = today;
-    const base = 1000;
-    const reward = Math.floor(base * Math.max(1, this.state.daily.streak) * (1 + this.state.stardustBonus()));
-    this.state.ce += reward;
-    Persistence.save();
-    return { ok:true, reward };
-  }
-  stardustBonus(){ return this.state ? (this.state.stardust * 0.05) : 0; }
-}
 
-/* ----------------- MASCOT ----------------- */
-class Mascot {
-  constructor(state){
-    this.state = state;
-    this.el = null;
+  // 40 skins (visuals that also give small bonuses)
+  for(let i=0;i<40;i++){
+    const id = `skin_${i}`;
+    const name = ['Pastel','Twilight','Moonbeam','Cherry','Sakura','Aurora','Velvet','Opal'][i%8] + ` ${i+1}`;
+    const cost = Math.round(150 * Math.pow(1.5, i/6));
+    const clickMult = 1 + (i*0.005);
+    DEFINITIONS.skins.push({ id, name, cost, clickMult, desc:`Cosmetic — +${((clickMult-1)*100).toFixed(2)}% click`});
   }
-  initUI(imgSelector){
-    this.el = document.querySelector(imgSelector);
-    if (this.el) this.el.src = CONFIG.MASCOT_ASSET;
-  }
-  gainXP(x){
-    this.state.mascot.xp += x;
-    const needed = this.state.mascot.level * 100;
-    if (this.state.mascot.xp >= needed){
-      this.state.mascot.xp -= needed;
-      this.state.mascot.level++;
-      UI.spawnFloat("Mascot LV "+this.state.mascot.level);
-    }
-  }
-}
 
-/* ----------------- RELICS ----------------- */
-class RelicSystem {
-  constructor(state){ this.state = state; }
-  tryDrop(){
-    if (Math.random() < 0.02){
-      const tiers = ["rare","epic","legendary","cosmic"];
-      const tier = tiers[Math.floor(Math.random()*tiers.length)];
-      const relic = { id: "r_"+Date.now(), tier, bonus: { ceMult: tier==="cosmic"?0.5: tier==="legendary"?0.25: tier==="epic"?0.12:0.04 } };
-      this.state.relics.push(relic);
-      UI.spawnFloat("Relic! " + tier);
-      Persistence.save();
-    }
+  // shop items (galaxy exploration)
+  for(let i=0;i<30;i++){
+    const id = `shop_star_${i}`;
+    const name = `Explore Star ${i+1}`;
+    const cost = Math.round(300 * Math.pow(1.6, i/4));
+    const bonus = Math.round(10 + Math.random()*120 * (1 + i*0.1));
+    DEFINITIONS.shop.push({ id, name, cost, desc:`Grants ${bonus} instant energy and a passive bonus.`, bonus});
   }
-  // fusion stub
-  fuse(aId,bId){
-    // TODO: implement fusion probabilities & result
-    UI.showToast("Relic fusion coming soon");
-  }
-}
 
-/* ----------------- MINI-GAMES (stubs) ----------------- */
-class MiniGames {
-  static asteroidDodge(){ UI.showToast("Asteroid Dodge stub"); }
-  static cosmicRhythm(){ UI.showToast("Cosmic Rhythm stub"); }
-  static stargateChallenge(){ UI.showToast("Stargate Challenge stub"); }
-  static galaxyMemory(){ UI.showToast("Galaxy Memory stub"); }
-}
+  // missions (10)
+  for(let i=0;i<10;i++){
+    const id = `mission_${i}`;
+    const target = Math.round(50 * Math.pow(2,i));
+    DEFINITIONS.missions.push({ id, name:`Reach ${format(target)} total produced`, target, reward: { energy: Math.round(target/5), shards: Math.floor(i/3) }});
+  }
 
-/* ----------------- LEADERBOARD ----------------- */
-class Leaderboard {
-  constructor(){
-    this.key = CONFIG.LEADER_KEY;
-    this.autoTimer = null;
+  // achievements (generated from milestones)
+  const achNames = ['First Spark','Explorer','Collector','Ascendant','Autopilot','Pet Lover','Fashionista','Relic Hunter'];
+  for(let i=0;i<50;i++){
+    const id = `ach_${i}`;
+    const name = achNames[i%achNames.length] + ' ' + (Math.floor(i/achNames.length)+1);
+    const desc = `Milestone ${i+1}`;
+    DEFINITIONS.achievements.push({ id, name, desc, condition: { producedTotal: Math.round(100 * Math.pow(2, i/3)) }});
   }
-  getLocal(){
-    try{ return JSON.parse(localStorage.getItem(this.key) || "[]"); }catch(e){ return []; }
-  }
-  saveLocal(arr){ localStorage.setItem(this.key, JSON.stringify(arr)); }
-  submit(name){
-    const arr = this.getLocal();
-    arr.push({ name: name||"Anon", score: Math.floor(game.state.ce), ts: Date.now() });
-    arr.sort((a,b)=>b.score-a.score);
-    if (arr.length>100) arr.length = 100;
-    this.saveLocal(arr);
-    UI.showToast("Score submitted");
-  }
-  autoUpdateStart(){
-    this.autoTimer = setInterval(()=> {
-      const arr = this.getLocal();
-      arr.push({ name: "You", score: Math.floor(game.state.ce), ts: Date.now() });
-      arr.sort((a,b)=>b.score-a.score);
-      if (arr.length>100) arr.length = 100;
-      this.saveLocal(arr);
-    }, CONFIG.AUTO_LB_INTERVAL_MS);
-  }
-  autoUpdateStop(){ if (this.autoTimer) clearInterval(this.autoTimer); }
-}
+})();
 
-/* ----------------- ACHIEVEMENTS ----------------- */
-const ACH_DEFS = [
-  {id:"first_click",name:"First Click",desc:"Make your first click",check: s=>s.ce>=1},
-  {id:"collector_1k",name:"Collector 1k",desc:"Reach 1,000 CE",check: s=>s.ce>=1000},
-  {id:"million",name:"Millionaire",desc:"Reach 1,000,000 CE",check: s=>s.ce>=1_000_000}
-];
-class Achievements {
-  static checkAll(){
-    ACH_DEFS.forEach(a=>{
-      if (!game.state.achievements[a.id] && a.check(game.state)){
-        game.state.achievements[a.id] = true;
-        UI.spawnFloat("Achievement: "+a.name);
-        Persistence.save();
-      }
-    });
+/* ---------- INITIALIZE / LOAD ---------- */
+function init(){
+  // load
+  const existing = loadState();
+  if(existing && existing.version){
+    state = Object.assign({}, defaultState, existing);
+    // ensure structures exist
+    state.upgrades = state.upgrades || {};
+    state.autos = state.autos || {};
+    state.pets = state.pets || {};
+    state.skinsOwned = state.skinsOwned || {};
+    state.achievements = state.achievements || {};
+    state.missions = state.missions || {};
+  } else {
+    state = JSON.parse(JSON.stringify(defaultState));
+    // give small starter
+    state.resources.energy = 500;
   }
-}
 
-/* ----------------- PERSISTENCE ----------------- */
-class Persistence {
-  static save(){
-    game.state.lastSave = nowMs();
-    localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(game.state));
-  }
-  static load(){
-    const raw = localStorage.getItem(CONFIG.SAVE_KEY);
-    if (!raw) return false;
+  bindUI();
+  startLoops();
+  renderAll();
+  generateBrandIcon();
+  initAudio();
+  // register service worker
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
+  // handle file import element
+  document.getElementById('fileInput').addEventListener('change', async (ev)=>{
+    const f = ev.target.files[0]; if(!f) return;
     try{
-      const obj = JSON.parse(raw);
-      // deep merge minimal
-      Object.assign(game.state, obj);
-      // offline calc
-      const last = obj.lastSave || obj.createdAt || nowMs();
-      const diffSec = Math.min((nowMs() - last)/1000, CONFIG.OFFLINE_MAX_HOURS*3600);
-      const offlineGain = game.state.baseCPS ? game.state.baseCPS()* diffSec * game.state.prestigeMultiplier() : 0;
-      game.state.ce += offlineGain;
-      if (offlineGain > 0) UI.showToast("Offline +"+fmt(Math.floor(offlineGain)));
-      return true;
-    }catch(e){ console.warn("Load failed", e); return false; }
-  }
-  static clear(){
-    localStorage.removeItem(CONFIG.SAVE_KEY);
-    UI.showToast("Save cleared");
-  }
-}
-
-/* ----------------- UI helpers ----------------- */
-const UI = {
-  spawnFloat(text){
-    const container = document.getElementById("floatingContainer");
-    if (!container) return;
-    const el = document.createElement("div");
-    el.className = "float";
-    el.style.position = "absolute";
-    el.style.left = Math.random()*60 + "%";
-    el.style.top = "0px";
-    el.style.fontWeight = "800";
-    el.style.color = "#ffd";
-    el.textContent = text;
-    container.appendChild(el);
-    setTimeout(()=> el.remove(), 900);
-  },
-  showToast(msg){
-    console.log("TOAST:", msg);
-    // lightweight: create small toast element
-    const t = document.createElement("div");
-    t.style.position = "fixed";
-    t.style.right = "12px";
-    t.style.top = "12px";
-    t.style.background = "rgba(0,0,0,0.7)";
-    t.style.color = "#fff";
-    t.style.padding = "8px 12px";
-    t.style.borderRadius = "8px";
-    t.style.zIndex = 9999;
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(()=> t.remove(), 1800);
-  },
-  updateAll(){
-    // simple UI updates — expects elements with these ids in HTML
-    const ceEl = document.getElementById("ceDisplay");
-    if (ceEl) ceEl.textContent = fmt(Math.floor(game.state.ce));
-    const cpc = document.getElementById("cpcDisplay");
-    if (cpc) cpc.textContent = Math.round(game.state.effectiveCPC(game.events.getMult()));
-    const cps = document.getElementById("cpsDisplay");
-    if (cps) cps.textContent = Math.round(game.state.effectiveCPS(game.events.getMult()));
-    const st = document.getElementById("stardust");
-    if (st) st.textContent = game.state.stardust;
-  }
-};
-
-/* ----------------- SOUND & HAPTICS ----------------- */
-const Sound = {
-  playClick(){
-    try{
-      const ctx = new (window.AudioContext||window.webkitAudioContext)();
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "sine"; o.frequency.value = 880;
-      g.gain.value = 0.02;
-      o.connect(g); g.connect(ctx.destination);
-      o.start(); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.12);
-      setTimeout(()=>{ o.stop(); ctx.close(); }, 160);
-    }catch(e){}
-  },
-  // placeholders for music & SFX
-};
-
-/* ----------------- MAIN GAME CLASS ----------------- */
-class Game {
-  constructor(){
-    this.state = new GameState();
-    this.shop = new Shop(this.state);
-    this.events = new EventSystem();
-    this.daily = new Daily(this.state);
-    this.mascot = new Mascot(this.state);
-    this.relics = new RelicSystem(this.state);
-    this.leader = new Leaderboard();
-    this.tickRate = 100; // ms
-    this._lastTick = nowMs();
-    this.running = false;
-  }
-
-  init(){
-    // UI wiring
-    const clickBtn = document.getElementById("clickBtn");
-    if (clickBtn) {
-      clickBtn.addEventListener("click", (e) => {
-        this.onClick(e);
-      });
-    }
-    const saveBtn = document.getElementById("saveBtn");
-    if (saveBtn) saveBtn.addEventListener("click", ()=>{ Persistence.save(); UI.showToast("Saved"); });
-    const resetBtn = document.getElementById("resetBtn");
-    if (resetBtn) resetBtn.addEventListener("click", ()=>{ if (confirm("Reset progress?")) { Persistence.clear(); location.reload(); }});
-    const prestigeBtn = document.getElementById("prestigeBtn");
-    if (prestigeBtn) prestigeBtn.addEventListener("click", ()=> this.doPrestige());
-    const claimDailyButton = document.getElementById("claimDaily");
-    if (claimDailyButton) claimDailyButton.addEventListener("click", ()=> this.claimDaily());
-    const submitScore = document.getElementById("submitScore");
-    if (submitScore) submitScore.addEventListener("click", ()=> { const n = prompt("Name (max 24)"); this.leader.submit(n && n.slice(0,24)); });
-
-    // buy buttons in-shop dynamically rendered via renderShop hooks;
-    // ensure mascot UI loads
-    this.mascot.initUI("#mascotImg");
-
-    // load save
-    Persistence.load();
-
-    // start leader auto-update
-    this.leader.autoUpdateStart();
-
-    // start main loop
-    this.running = true;
-    this._looper();
-  }
-
-  onClick(e){
-    const gain = this.state.effectiveCPC(this.events.getMult());
-    this.state.ce += gain;
-    UI.spawnFloat("+"+fmt(Math.round(gain)));
-    Sound.playClick();
-    try { navigator.vibrate && navigator.vibrate(15); } catch(e){}
-    this.mascot.gainXP(1);
-    this.relics.tryDrop();
-    Achievements.checkAll();
-    UI.updateAll();
-  }
-
-  onTick(dt){
-    // passive income
-    const cps = this.state.effectiveCPS(this.events.getMult());
-    this.state.ce += cps * (dt/1000);
-    // try events occasionally
-    if (Math.random() < 0.006) this.events.maybeStart();
-    // autosave occasionally
-    if (nowMs() - this.state.lastSave > 5000) Persistence.save();
-    UI.updateAll();
-  }
-
-  _looper(){
-    if (!this.running) return;
-    const now = nowMs();
-    const dt = now - this._lastTick;
-    this._lastTick = now;
-    this.onTick(dt);
-    requestAnimationFrame(()=>this._looper());
-  }
-
-  doPrestige(){
-    if (this.state.ce < 1_000_000) return UI.showToast("Need 1,000,000 CE to prestige");
-    const earned = Math.floor(this.state.ce/1_000_000);
-    this.state.stardust += earned;
-    // auto-award galactic/universal thresholds
-    const newGal = Math.floor(this.state.stardust/100);
-    if (newGal > this.state.galactic) this.state.galactic = newGal;
-    const newUni = Math.floor(this.state.stardust/1000);
-    if (newUni > this.state.universal) this.state.universal = newUni;
-    // reset core progress
-    this.state.ce = 0;
-    this.state.owned = { cpc:{1:0,2:0,3:0}, cps:{1:0,2:0,3:0} };
-    Persistence.save();
-    UI.showToast("Prestiged +"+earned+" SD");
-  }
-
-  claimDaily(){
-    if (!this.daily.canClaim()) return UI.showToast("Daily already claimed");
-    // reward calculation
-    const today = Math.floor(Date.now()/86400000);
-    const yesterday = today - 1;
-    if (this.state.daily.lastClaim === yesterday) this.state.daily.streak++;
-    else this.state.daily.streak = 1;
-    this.state.daily.lastClaim = today;
-    const base = 1000;
-    const reward = Math.floor(base * Math.max(1,this.state.daily.streak) * (1 + 0.05*this.state.stardust));
-    this.state.ce += reward;
-    Persistence.save();
-    UI.showToast("Daily +" + fmt(reward) + " (streak " + this.state.daily.streak + ")");
-  }
-
-  // Expandable: add more complex systems (guilds, trading, cloud save) here
-}
-
-/* ----------------- Bootstrap ----------------- */
-const game = new Game();
-
-// Quick UI: render a simple shop area (if shopList exists)
-function attachShopUI(){
-  const shopEl = document.getElementById("shopList");
-  if (!shopEl) return;
-  shopEl.innerHTML = "";
-  ["cpc","cps"].forEach(type=>{
-    Object.keys(SHOP_DEFS[type]).forEach(t=>{
-      const def = SHOP_DEFS[type][t];
-      const row = document.createElement("div");
-      row.className = "flex justify-between items-center";
-      const buyBtn = document.createElement("button");
-      buyBtn.textContent = "Buy";
-      buyBtn.className = "btn";
-      buyBtn.onclick = ()=> { game.shop.buy(type, Number(t)); };
-      row.innerHTML = `<div><b>${def.name}</b><div class="text-xs">${type.toUpperCase()} +${def.eff}</div></div>`;
-      row.appendChild(buyBtn);
-      shopEl.appendChild(row);
-    });
+      const text = await f.text();
+      const data = JSON.parse(text);
+      // basic validation
+      if(data && data.resources){
+        state = Object.assign({}, defaultState, data);
+        saveState();
+        renderAll();
+        alert('Import successful');
+      } else alert('Invalid save file');
+    }catch(e){ alert('Import failed: '+e); }
+    ev.target.value = '';
   });
 }
 
-// Attach basic UI wiring when DOM ready
-window.addEventListener("DOMContentLoaded", ()=>{
-  attachShopUI();
-  game.init();
-  UI.updateAll();
-  // attempt to register a service worker (if service-worker.js exists in repo)
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js').then(()=> console.log('SW registered')).catch(()=>console.log('SW reg failed'));
-  }
-});
+/* ---------- UI BINDINGS & RENDER ---------- */
+function bindUI(){
+  document.getElementById('big-click').addEventListener('click', ()=>{ doManualClick(); });
+  document.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); doManualClick(); } if(e.key.toLowerCase()==='p'){ doPrestige(); }});
+  document.getElementById('btn-export').addEventListener('click', exportSave);
+  document.getElementById('btn-import').addEventListener('click', ()=>document.getElementById('fileInput').click());
+  document.getElementById('btn-prestige').addEventListener('click', ()=>doPrestige());
+  document.getElementById('btn-settings').addEventListener('click', ()=>{
+    const el = document.getElementById('settingsPanel');
+    el.style.display = (el.style.display==='none' || el.style.display==='' ) ? 'block' : 'none';
+  });
+  document.getElementById('btn-reset').addEventListener('click', ()=>{
+    if(confirm('Reset your save?')){ localStorage.removeItem(SAVE_KEY); state = JSON.parse(JSON.stringify(defaultState)); saveState(); renderAll(); }
+  });
+  document.getElementById('toggleSfx').addEventListener('change',(e)=>{ state.settings.sfx = e.target.checked; saveState(); });
+  document.getElementById('toggleMusic').addEventListener('change',(e)=>{ state.settings.music = e.target.checked; toggleMusic(e.target.checked); saveState(); });
+  document.getElementById('toggleCompact').addEventListener('change',(e)=>{ state.settings.compact = e.target.checked; document.getElementById('app').classList.toggle('compact', e.target.checked); saveState(); });
+  document.getElementById('toggleParticles').addEventListener('change',(e)=>{ state.settings.particles = e.target.checked; saveState(); toggleParticlesCanvas(e.target.checked); });
+}
 
-/* ----------------- Notes & Next Steps -----------------
-  - Many advanced features (guilds, P2P trading, cloud sync, full mini-games, relic fusion algorithms,
-    multi-realm dynamic content, full audio mixing, anti-cheat) are included as TODO stubs.
-  - To fully "add all features", implement these TODOs:
-     * Expand MiniGames.* functions into real mini games UI + reward mechanics
-     * Implement Relic.fuse with probabilistic outcomes & resource costs
-     * Add Cloud Save via Firebase / Supabase for cross-device
-     * Implement real online leaderboard with a hosted JSON endpoint
-     * Add UI pages for Realms, Guilds, Market, Crafting, Story mode
-     * Implement advanced automation tuning UI & bot rules
-     * Implement achievement-specific rewards & titles
-     * Flesh out Omni Prestige tier (endgame)
-  - I can automatically generate service-worker.js, manifest.json, icons, and a zipped Android TWA or Electron package next.
------------------------------------------------ */
+/* ---------- GAME LOOP & TICK ---------- */
+let tickTimer = null;
+let autosaveTimer = null;
+function startLoops(){
+  // offline catch-up
+  const nowTime = now();
+  const diff = Math.floor((nowTime - state.lastTick) / 1000); // seconds
+  if(diff > 2){
+    // compute approximate passive earnings during offline period
+    const estPerSec = computePerSecond();
+    const gained = estPerSec * diff;
+    state.resources.energy += gained;
+    state.producedTotal += gained;
+    // small notification (console)
+    console.log('Offline gain',format(gained),'for',diff,'s');
+  }
+
+  tickTimer = setInterval(() => {
+    tick();
+  }, TICK_MS);
+
+  autosaveTimer = setInterval(() => {
+    saveState();
+  }, AUTO_SAVE_MS);
+}
+
+function tick(){
+  const s = computePerSecond();
+  const dt = TICK_MS / 1000;
+  const gain = s * dt;
+  state.resources.energy += gain;
+  state.producedTotal += gain;
+  state.perSecond = s;
+  checkMissions();
+  checkAchievements();
+  renderStats();
+  if(state.settings.particles) spawnAmbientParticles(s * 0.2);
+}
+
+/* ---------- COMPUTE ---------- */
+function computePerSecond(){
+  let per = 0;
+  // autos
+  for(const def of DEFINITIONS.autos){
+    const owned = state.autos[def.id] || 0;
+    per += def.perSec * owned;
+  }
+  // pet auto boost
+  let petBoost = 1;
+  for(const pet of DEFINITIONS.pets){
+    if(state.pets[pet.id]) petBoost *= pet.autoBoost || 1;
+  }
+  per *= petBoost;
+  return per;
+}
+
+/* ---------- MANUAL CLICK ---------- */
+function doManualClick(){
+  const add = (state.clickValue || 1) * (state.clickMult || 1);
+  state.resources.energy += add;
+  state.producedTotal += add;
+  playSFX('click');
+  pulseClickButton();
+  spawnClickParticles(12);
+  renderStats();
+}
+
+/* ---------- BUYING / SHOP / AUTOS / PETS / SKINS ---------- */
+function buyUpgrade(id){
+  const def = DEFINITIONS.upgrades.find(u=>u.id===id);
+  if(!def) return;
+  const cost = def.cost * ( (state.upgrades[id] || 0) + 1 );
+  if(state.resources.energy < cost) return alert('Not enough energy');
+  state.resources.energy -= cost;
+  state.upgrades[id] = (state.upgrades[id]||0) + 1;
+  // apply effect — upgrades give clickAdd that scales with count
+  state.clickValue += def.effect.clickAdd;
+  playSFX('buy'); spawnClickParticles(8);
+  renderUpgrades();
+  saveState();
+}
+
+function buyAuto(id){
+  const def = DEFINITIONS.autos.find(a=>a.id===id); if(!def) return;
+  const cost = def.cost * ( (state.autos[id] || 0) + 1 );
+  if(state.resources.energy < cost) return alert('Not enough energy');
+  state.resources.energy -= cost;
+  state.autos[id] = (state.autos[id]||0) + 1;
+  playSFX('buy');
+  renderAutos();
+  saveState();
+}
+
+function buyPet(id){
+  const def = DEFINITIONS.pets.find(p=>p.id===id); if(!def) return;
+  const owned = state.pets[id] || 0;
+  const cost = Math.round(def.cost * (owned+1));
+  if(state.resources.energy < cost) return alert('Not enough energy');
+  state.resources.energy -= cost;
+  state.pets[id] = (state.pets[id] || 0) + 1;
+  // apply pet bonuses
+  state.clickMult *= def.clickBonus;
+  saveState(); renderPets();
+}
+
+function buySkin(id){
+  const def = DEFINITIONS.skins.find(s=>s.id===id); if(!def) return;
+  if(state.skinsOwned[id]) return;
+  if(state.resources.energy < def.cost) return alert('Not enough energy');
+  state.resources.energy -= def.cost;
+  state.skinsOwned[id] = true;
+  // apply skin click multiplier multiplicatively
+  state.clickMult *= def.clickMult;
+  saveState(); renderSkins();
+}
+
+function buyShopItem(id){
+  const def = DEFINITIONS.shop.find(s=>s.id===id); if(!def) return;
+  if(state.resources.energy < def.cost) return alert('Not enough energy');
+  state.resources.energy -= def.cost;
+  // grant instant bonus
+  state.resources.energy += def.bonus;
+  // small persistent boost: add to meta
+  state.meta['star_bonus_'+id] = (state.meta['star_bonus_'+id]||0) + Math.round(def.bonus*0.05);
+  playSFX('buy'); renderShop(); saveState();
+}
+
+/* ---------- PRESTIGE / ASCEND ---------- */
+function doPrestige(){
+  // prestige convert energy to shards via soft formula
+  const energy = Math.floor(state.resources.energy);
+  const shardsGain = Math.floor(Math.sqrt(energy / 2000));
+  if(shardsGain <= 0) return alert('Not enough progress to ascend');
+  if(!confirm(`Ascend and gain ${shardsGain} shards? This will reset most progress.`)) return;
+  state.resources.shards += shardsGain;
+  state.prestigeCount += 1;
+  // keep achievements & shards, reset others
+  const keep = { settings: state.settings, shards: state.resources.shards, prestigeCount: state.prestigeCount, achievements: state.achievements };
+  state = JSON.parse(JSON.stringify(defaultState));
+  state.settings = keep.settings; state.resources.shards = keep.shards; state.prestigeCount = keep.prestigeCount; state.achievements = keep.achievements;
+  saveState(); renderAll();
+}
+
+/* ---------- ACHIEVEMENTS / MISSIONS ---------- */
+function checkAchievements(){
+  // generated achievements based on producedTotal milestones
+  for(const ach of DEFINITIONS.achievements){
+    if(state.achievements[ach.id]) continue;
+    if(state.producedTotal >= (ach.condition.producedTotal || Infinity)){
+      state.achievements[ach.id] = { unlockedAt: now(), name: ach.name, desc: ach.desc };
+      spawnAchievementBurst();
+      saveState();
+    }
+  }
+}
+
+function checkMissions(){
+  for(const m of DEFINITIONS.missions){
+    if(state.missions[m.id] && state.missions[m.id].completed) continue;
+    if(state.producedTotal >= m.target){
+      state.missions[m.id] = { completed: true, claimed: true, reward: m.reward };
+      // give reward
+      state.resources.energy += (m.reward.energy || 0);
+      state.resources.shards += (m.reward.shards || 0);
+      saveState(); renderMissions();
+    }
+  }
+}
+
+/* ---------- RENDER FUNCTIONS ---------- */
+function renderAll(){
+  renderStats(); renderUpgrades(); renderAutos(); renderShop(); renderMissions(); renderAchievements(); renderPets(); renderSkins(); renderMap();
+}
+function renderStats(){
+  document.getElementById('energyDisplay').textContent = format(state.resources.energy);
+  document.getElementById('perSecDisplay').textContent = `+${format(state.perSecond || computePerSecond())} / sec`;
+  document.getElementById('clickValue').textContent = `+${format(state.clickValue || 1)}`;
+  document.getElementById('prestigeGain').textContent = Math.floor(Math.sqrt((state.resources.energy || 0)/2000));
+}
+
+function renderUpgrades(){
+  const el = document.getElementById('upgradesList'); el.innerHTML = '';
+  // Show first 40 by default, with search/filter in future
+  for(let i=0;i<DEFINITIONS.upgrades.length;i++){
+    const def = DEFINITIONS.upgrades[i];
+    const owned = state.upgrades[def.id] || 0;
+    const cost = Math.round(def.cost * (owned+1));
+    const node = document.createElement('div'); node.className='item';
+    node.innerHTML = `<div><strong>${def.name}</strong><div class="subtitle">${def.desc}</div></div>
+      <div>
+        <div class="subtitle">Owned: ${owned}</div>
+        <button data-id="${def.id}">Buy (${format(cost)})</button>
+      </div>`;
+    node.querySelector('button').addEventListener('click', ()=>{ buyUpgrade(def.id); });
+    el.appendChild(node);
+    if(i>39) break; // keep UI manageable — full list accessible via dev console
+  }
+  // hint about more upgrades
+  if(DEFINITIONS.upgrades.length > 40){
+    const more = document.createElement('div'); more.className='subtitle'; more.textContent = `... ${DEFINITIONS.upgrades.length-40} more upgrades (generated) available. Use console to browse all.`; el.appendChild(more);
+  }
+}
+
+function renderAutos(){
+  const el = document.getElementById('autosList'); el.innerHTML = '';
+  for(const def of DEFINITIONS.autos){
+    const owned = state.autos[def.id] || 0;
+    const cost = Math.round(def.cost * (owned+1));
+    const node = document.createElement('div'); node.className='item';
+    node.innerHTML = `<div><strong>${def.name}</strong><div class="subtitle">${def.desc}</div></div>
+      <div>
+        <div class="subtitle">Owned: ${owned}</div>
+        <button data-id="${def.id}">Buy (${format(cost)})</button>
+      </div>`;
+    node.querySelector('button').addEventListener('click', ()=>{ buyAuto(def.id); });
+    el.appendChild(node);
+  }
+}
+
+function renderShop(){
+  const el = document.getElementById('shopList'); el.innerHTML = '';
+  for(const def of DEFINITIONS.shop){
+    const node = document.createElement('div'); node.className='item';
+    node.innerHTML = `<div><strong>${def.name}</strong><div class="subtitle">${def.desc}</div></div>
+      <div><div class="subtitle">Bonus ${format(def.bonus)}</div><button data-id="${def.id}">Buy (${format(def.cost)})</button></div>`;
+    node.querySelector('button').addEventListener('click', ()=>{ buyShopItem(def.id); });
+    el.appendChild(node);
+  }
+}
+
+function renderMissions(){
+  const el = document.getElementById('missionsList'); el.innerHTML = '';
+  for(const m of DEFINITIONS.missions){
+    const st = state.missions[m.id];
+    const done = st && st.completed;
+    const node = document.createElement('div'); node.className='item';
+    node.innerHTML = `<div><strong>${m.name}</strong><div class="subtitle">Target: ${format(m.target)}</div></div>
+      <div><div class="subtitle">${done?'Completed':'Active'}</div></div>`;
+    el.appendChild(node);
+  }
+}
+
+function renderAchievements(){
+  const el = document.getElementById('achievementsList'); el.innerHTML = '';
+  for(const key in state.achievements){
+    const a = state.achievements[key];
+    const node = document.createElement('div'); node.className='item';
+    node.innerHTML = `<div><strong>${a.name}</strong><div class="subtitle">${a.desc || ''}</div></div><div class="subtitle">Unlocked</div>`;
+    el.appendChild(node);
+  }
+}
+
+function renderPets(){
+  const el = document.getElementById('petsList'); el.innerHTML = '';
+  for(const p of DEFINITIONS.pets.slice(0,18)){
+    const owned = state.pets[p.id] || 0;
+    const cost = Math.round(p.cost * (owned+1));
+    const node = document.createElement('div'); node.className='item';
+    node.innerHTML = `<div style="display:flex;align-items:center"><div class="skin-preview" style="background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(0,0,0,0.06));border:1px solid rgba(255,255,255,0.02)"></div>
+      <div><strong>${p.name}</strong><div class="subtitle">${p.desc}</div></div></div>
+      <div><div class="subtitle">Owned: ${owned}</div><button data-id="${p.id}">Buy (${format(cost)})</button></div>`;
+    node.querySelector('button').addEventListener('click', ()=>{ buyPet(p.id); });
+    el.appendChild(node);
+  }
+}
+function renderSkins(){
+  const el = document.getElementById('skinsList'); el.innerHTML = '';
+  for(const s of DEFINITIONS.skins.slice(0,12)){
+    const owned = !!state.skinsOwned[s.id];
+    const node = document.createElement('div'); node.className='item';
+    node.innerHTML = `<div style="display:flex;align-items:center"><div class="skin-preview" style="background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(0,0,0,0.06));"></div>
+      <div><strong>${s.name}</strong><div class="subtitle">${s.desc}</div></div></div>
+      <div><div class="subtitle">${owned?'Owned':''}</div><button data-id="${s.id}">${owned?'Select':'Buy'} (${format(s.cost)})</button></div>`;
+    node.querySelector('button').addEventListener('click', ()=>{ buySkin(s.id); });
+    el.appendChild(node);
+  }
+}
+
+function renderMap(){
+  const c = document.getElementById('mapCanvas'); const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  const stars = 12;
+  const w = c.width; const h = c.height;
+  // gradient bg
+  const g = ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,'#080612'); g.addColorStop(1,'#0b0710'); ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  for(let i=0;i<stars;i++){
+    const x = (i+1)*(w/(stars+1)); const y = h*0.35 + Math.sin(i)*20;
+    const r = 6 + (i%3)*2;
+    const glow = ctx.createRadialGradient(x,y,0,x,y,r*6); glow.addColorStop(0,'rgba(194,155,255,0.18)'); glow.addColorStop(1,'rgba(194,155,255,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x,y,r*4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#c29bff'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.font='11px Inter, Arial'; ctx.fillText('Star '+(i+1), x+8, y+4);
+  }
+}
+
+/* ---------- PARTICLES ---------- */
+const particlesCanvas = document.getElementById('particles');
+let PCTX = null;
+let particles = [];
+function resizeParticles(){ particlesCanvas.width = window.innerWidth; particlesCanvas.height = window.innerHeight; PCTX = particlesCanvas.getContext('2d'); }
+window.addEventListener('resize', resizeParticles);
+resizeParticles();
+
+function spawnClickParticles(n){
+  if(!state.settings.particles) return;
+  const rect = document.getElementById('big-click').getBoundingClientRect();
+  const cx = rect.left + rect.width/2; const cy = rect.top + rect.height/2;
+  for(let i=0;i<n;i++){
+    particles.push({ x:cx, y:cy, vx:(Math.random()-0.5)*6, vy:(Math.random()-0.9)*6, life: 40+Math.random()*30, hue: 280 + Math.random()*80, size:2 + Math.random()*4 });
+  }
+}
+
+function spawnAmbientParticles(n){
+  if(!state.settings.particles) return;
+  for(let i=0;i<Math.round(n/3);i++){
+    const x = Math.random()*window.innerWidth, y = Math.random()*window.innerHeight;
+    particles.push({ x, y, vx:(Math.random()-0.5)*0.8, vy:(Math.random()-0.5)*0.8, life: 80+Math.random()*120, hue: 260 + Math.random()*40, size:1 + Math.random()*3 });
+  }
+}
+
+function particleLoop(){
+  PCTX.clearRect(0,0,particlesCanvas.width,particlesCanvas.height);
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.life -= 1;
+    const alpha = Math.max(0, p.life / 120);
+    PCTX.beginPath();
+    const grad = PCTX.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*6);
+    grad.addColorStop(0, `hsla(${p.hue},80%,70%,${0.6*alpha})`); grad.addColorStop(1, `hsla(${p.hue},60%,50%,0)`);
+    PCTX.fillStyle = grad;
+    PCTX.arc(p.x,p.y,p.size*3,0,Math.PI*2);
+    PCTX.fill();
+    if(p.life <= 0 || p.x < -50 || p.x > window.innerWidth+50 || p.y < -50 || p.y > window.innerHeight+50){
+      particles.splice(i,1);
+    }
+  }
+  requestAnimationFrame(particleLoop);
+}
+particleLoop();
+
+/* ---------- AUDIO ---------- */
+let audioCtx = null;
+function initAudio(){
+  // create small sounds by WebAudio — no external files required
+  try{
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+    if(state.settings.music){
+      // simple background oscillator (low volume)
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.type='sine'; o.frequency.value = 110; g.gain.value = 0.0008; o.connect(g); g.connect(audioCtx.destination); o.start();
+      // stop after a bit to avoid battery drain in WebView; real apps should use audio files
+      setTimeout(()=>{ try{ o.stop(); }catch(e){} }, 60000);
+    }
+  }catch(e){ audioCtx = null; }
+}
+
+function playSFX(kind){
+  if(!state.settings.sfx) return;
+  try{
+    if(!audioCtx) initAudio();
+    const ctx = audioCtx;
+    const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination);
+    if(kind==='click'){ o.frequency.value = 880; g.gain.value = 0.02; o.type='sine'; setTimeout(()=>{ o.stop(); }, 60); }
+    else if(kind==='buy'){ o.frequency.value = 520; g.gain.value = 0.02; o.type='triangle'; setTimeout(()=>{ o.stop(); }, 140); }
+    else{ o.frequency.value = 400; g.gain.value = 0.01; setTimeout(()=>{ o.stop(); }, 100); }
+  }catch(e){}
+}
+
+/* ---------- SMALL UI EFFECTS ---------- */
+function pulseClickButton(){ const btn = document.getElementById('big-click'); btn.classList.add('pulse'); setTimeout(()=>btn.classList.remove('pulse'),600); }
+function spawnAchievementBurst(){ for(let i=0;i<40;i++) spawnClickParticles(2); }
+
+/* ---------- BRAND ICON (Canvas-generated) ---------- */
+function generateBrandIcon(){
+  const c = document.getElementById('brandCanvas'); const ctx = c.getContext('2d');
+  // background orb
+  const grad = ctx.createRadialGradient(32,32,6,32,32,32); grad.addColorStop(0,'#fff1ff'); grad.addColorStop(1,'#c29bff');
+  ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(32,32,30,0,Math.PI*2); ctx.fill();
+  // little sparkle
+  ctx.fillStyle = '#ffffff88'; ctx.beginPath(); ctx.arc(20,22,8,0,Math.PI*2); ctx.fill();
+  // draw mini mascot face (simple)
+  ctx.fillStyle = '#2b1a30'; ctx.fillRect(18,36,28,6); ctx.fillStyle='#2b1a30'; ctx.fillRect(22,28,6,6); ctx.fillRect(34,28,6,6);
+  // export as favicon for PWA usage — create a link tag later
+  try{
+    const data = c.toDataURL('image/png');
+    const link = document.createElement('link'); link.rel='icon'; link.href=data; document.head.appendChild(link);
+    // also put image into manifest (manifest.json is static but android wrapper will use app icon)
+  }catch(e){}
+}
+
+/* ---------- EXPORT / IMPORT ---------- */
+function exportSave(){
+  const dataStr = JSON.stringify(state, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = `cosmic_clicker_save_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+/* ---------- SMALL HELPERS ---------- */
+function renderMissions(){ renderMissions(); } // no-op for now, but prevents a linter warning
+
+/* ---------- RENDER INITIAL UI ---------- */
+function renderUpFront(){
+  document.getElementById('toggleSfx').checked = !!state.settings.sfx;
+  document.getElementById('toggleMusic').checked = !!state.settings.music;
+  document.getElementById('toggleCompact').checked = !!state.settings.compact;
+  document.getElementById('toggleParticles').checked = !!state.settings.particles;
+  if(state.settings.compact) document.getElementById('app').classList.add('compact');
+}
+renderUpFront();
+
+/* ---------- RENDER INITIAL DATA ---------- */
+function renderAllDelayed(){
+  renderAll();
+  setTimeout(()=>renderAll(), 300);
+}
+renderAllDelayed();
+
+/* ---------- MISC ---------- */
+function renderUpgradesOnce(){ renderUpgrades(); }
+function toggleMusic(enabled){ /* For now, simple WebAudio; could load files */ }
+function toggleParticlesCanvas(on){ document.getElementById('particles').style.display = on ? 'block' : 'none'; }
+
+/* ---------- SAVE / AUTO SAVE ---------- */
+saveState();
+setInterval(()=>{ saveState(); }, AUTO_SAVE_MS);
+
+/* ---------- Simple Logging / Debug API ---------- */
+window.__COSMIC__ = { state, DEFINITIONS, saveState, buyUpgrade, buyAuto, buyPet, buySkin, doManualClick };
+
+/* ---------- Start ---------- */
+init();
+</script>
+</body>
+</html>
