@@ -5,147 +5,212 @@
   <title>Cosmic Clicker</title>
   <style>
     body {
-      font-family: sans-serif;
-      background: linear-gradient(to bottom, #2d0a4e, #1a0933, #000);
-      color: #fbcfe8;
       margin: 0;
-      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom, #1a0933, #2d0a4e);
+      color: #fbcfe8;
     }
     header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 1rem; background: rgba(0,0,0,0.4);
+      background: #000000aa;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      border-bottom: 2px solid #9333ea;
     }
-    .tab-btn {
-      padding: 0.5rem 1rem; margin: 0.25rem;
-      border-radius: 0.25rem; background: #6b21a8; color: #fbcfe8;
+    .container {
+      display: flex;
+      height: calc(100vh - 80px);
+    }
+    .left-panel {
+      width: 40%;
+      background: #2d0a4e;
+      border-right: 2px solid #9333ea;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+    .hero {
+      background: #1a0933;
+      border: 1px solid #9333ea;
+      border-radius: 8px;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .hero h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .hero button {
+      margin-top: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      background: #9333ea;
+      color: white;
+      border: none;
+      border-radius: 4px;
       cursor: pointer;
     }
-    .tab-btn:hover { background: #7e22ce; }
-    .tab-panel { padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 0.5rem; margin-top: 1rem; }
-    .hidden { display: none; }
-    #tapButton {
-      width: 120px; height: 120px; border-radius: 50%;
-      background: linear-gradient(to right,#ec4899,#9333ea);
-      color: white; font-size: 1.25rem; margin-top: 1rem;
+    .right-panel {
+      width: 60%;
+      padding: 1rem;
+      text-align: center;
+      position: relative;
     }
-    #achievementPopup {
-      position: fixed; bottom: 1rem; right: 1rem;
-      background: #4c1d95; color: #fbcfe8;
-      padding: 1rem; border-radius: 0.5rem;
-      display: none;
+    .enemy {
+      margin-top: 2rem;
+      background: #1a0933;
+      border: 2px solid #9333ea;
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .enemy img {
+      width: 120px;
+      height: auto;
+    }
+    .hp-bar {
+      height: 20px;
+      background: #4c1d95;
+      border-radius: 10px;
+      margin: 0.5rem 0;
+      overflow: hidden;
+    }
+    .hp-fill {
+      height: 100%;
+      background: #f43f5e;
+      width: 100%;
+      transition: width 0.3s ease;
+    }
+    #tapButton {
+      margin-top: 1rem;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      background: linear-gradient(to right, #ec4899, #9333ea);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .top-bar {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <header>
-    <div style="display:flex;align-items:center;gap:0.5rem">
-      <img src="assets/mascot.png" alt="Mascot" style="width:48px;height:48px;border-radius:50%;border:2px solid #fbcfe8" />
-      <h1>Cosmic Clicker</h1>
+  <header>Cosmic Clicker</header>
+  <div class="container">
+    <div class="left-panel">
+      <div class="top-bar">Gold: <span id="gold">0</span></div>
+      <div id="heroList">
+        <!-- Heroes will be injected here -->
+      </div>
     </div>
-  </header>
-
-  <!-- Main Game Area -->
-  <main>
-    <div id="energyDisplay" style="font-size:2rem;font-weight:bold;margin-top:1rem">Cosmic Energy: 0</div>
-    <button id="tapButton">Tap!</button>
-    <div id="currencyDisplay" style="margin-top:1rem">
-      <p>Stardust: <span id="stardust">0</span></p>
-      <p>Dark Matter: <span id="darkmatter">0</span></p>
-      <p>Relics: <span id="relics">0</span></p>
-      <p>Cores: <span id="cores">0</span></p>
+    <div class="right-panel">
+      <div class="enemy">
+        <h2>King Bloated Crab</h2>
+        <img src="assets/crab.png" alt="Enemy" />
+        <div class="hp-bar"><div id="hpFill" class="hp-fill"></div></div>
+        <p>HP: <span id="enemyHP">1000</span></p>
+        <p>Time Left: <span id="timer">30.0</span> sec</p>
+        <p>Gold Earned: <span id="earnedGold">0</span></p>
+        <button id="tapButton">Attack!</button>
+      </div>
     </div>
-  </main>
-
-  <!-- Tabs -->
-  <nav style="display:flex;flex-wrap:wrap;justify-content:center;background:rgba(0,0,0,0.4);padding:0.5rem">
-    <button class="tab-btn" data-tab="home">Home</button>
-    <button class="tab-btn" data-tab="upgrades">Upgrades</button>
-    <button class="tab-btn" data-tab="shop">Shop</button>
-    <button class="tab-btn" data-tab="prestige">Prestige</button>
-    <button class="tab-btn" data-tab="quests">Quests</button>
-    <button class="tab-btn" data-tab="events">Events</button>
-    <button class="tab-btn" data-tab="achievements">Achievements</button>
-    <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
-    <button class="tab-btn" data-tab="inventory">Inventory</button>
-    <button class="tab-btn" data-tab="crafting">Crafting</button>
-    <button class="tab-btn" data-tab="settings">Settings</button>
-    <button class="tab-btn" data-tab="stats">Stats</button>
-    <button class="tab-btn" data-tab="mascot">Mascot</button>
-  </nav>
-
-  <!-- Tab Content -->
-  <section id="tab-content">
-    <div id="home" class="tab-panel">Welcome to Cosmic Clicker! Tap to collect energy.</div>
-    <div id="upgrades" class="tab-panel hidden">Upgrade your generators here.</div>
-    <div id="shop" class="tab-panel hidden">Buy items with Stardust.</div>
-    <div id="prestige" class="tab-panel hidden">Prestige resets for multipliers.</div>
-    <div id="quests" class="tab-panel hidden">Complete quests for rewards.</div>
-    <div id="events" class="tab-panel hidden">Special cosmic events appear here.</div>
-    <div id="achievements" class="tab-panel hidden">Track your achievements.</div>
-    <div id="leaderboard" class="tab-panel hidden">Local leaderboard.</div>
-    <div id="inventory" class="tab-panel hidden">Your collected items.</div>
-    <div id="crafting" class="tab-panel hidden">Forge relics and cores.</div>
-    <div id="settings" class="tab-panel hidden">Game settings.</div>
-    <div id="stats" class="tab-panel hidden">Detailed stats.</div>
-    <div id="mascot" class="tab-panel hidden">
-      <img src="assets/mascot.png" alt="Mascot" style="width:96px;height:96px;margin:auto" />
-      <p>Mascot Level: <span id="mascotLevel">1</span></p>
-      <p>Relationship: <span id="mascotRelationship">0%</span></p>
-    </div>
-  </section>
-
-  <!-- Achievement Popup -->
-  <div id="achievementPopup">Achievement Unlocked!</div>
+  </div>
 
   <script>
-    // Core game progression
-    let energy = 0, stardust = 0, darkmatter = 0, relics = 0, cores = 0;
-    const energyDisplay = document.getElementById("energyDisplay");
-    const tapButton = document.getElementById("tapButton");
-    const stardustDisplay = document.getElementById("stardust");
-    const darkmatterDisplay = document.getElementById("darkmatter");
-    const relicsDisplay = document.getElementById("relics");
-    const coresDisplay = document.getElementById("cores");
-    const achievementPopup = document.getElementById("achievementPopup");
+    let gold = 0;
+    let enemyHP = 1000;
+    let maxHP = 1000;
+    let timer = 30.0;
+    let earnedGold = 0;
 
-    tapButton.addEventListener("click", () => {
-      energy++;
-      energyDisplay.textContent = "Cosmic Energy: " + energy;
-      if (energy % 10 === 0) {
-        stardust++;
-        stardustDisplay.textContent = stardust;
-        showAchievement("Collected " + energy + " Energy!");
-      }
-      if (energy % 50 === 0) {
-        darkmatter++;
-        darkmatterDisplay.textContent = darkmatter;
-      }
-      if (energy % 100 === 0) {
-        relics++;
-        relicsDisplay.textContent = relics;
-      }
-      if (energy % 200 === 0) {
-        cores++;
-        coresDisplay.textContent = cores;
-      }
-    });
+    const goldDisplay = document.getElementById("gold");
+    const enemyHPDisplay = document.getElementById("enemyHP");
+    const timerDisplay = document.getElementById("timer");
+    const earnedGoldDisplay = document.getElementById("earnedGold");
+    const hpFill = document.getElementById("hpFill");
 
-    function showAchievement(text) {
-      achievementPopup.textContent = text;
-      achievementPopup.style.display = "block";
-      setTimeout(() => { achievementPopup.style.display = "none"; }, 2000);
+    const heroes = [
+      { name: "Treebeast", level: 1, dps: 10 },
+      { name: "Wandering Fisherman", level: 1, dps: 15 },
+      { name: "Betty Clicker", level: 1, dps: 20 },
+      { name: "Masked Samurai", level: 1, dps: 25 },
+      { name: "Leon", level: 1, dps: 30 }
+    ];
+
+    function renderHeroes() {
+      const list = document.getElementById("heroList");
+      list.innerHTML = "";
+      heroes.forEach((hero, index) => {
+        const div = document.createElement("div");
+        div.className = "hero";
+        div.innerHTML = `
+          <h3>${hero.name} (Lv ${hero.level})</h3>
+          <p>DPS: ${hero.dps * hero.level}</p>
+          <button onclick="upgradeHero(${index})">Upgrade (Cost: ${hero.level * 50})</button>
+        `;
+        list.appendChild(div);
+      });
     }
 
-    // Tab switching
-    const tabButtons = document.querySelectorAll(".tab-btn");
-    const tabPanels = document.querySelectorAll(".tab-panel");
-    tabButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        tabPanels.forEach(panel => panel.classList.add("hidden"));
-        document.getElementById(btn.dataset.tab).classList.remove("hidden");
-      });
+    function upgradeHero(i) {
+      const cost = heroes[i].level * 50;
+      if (gold >= cost) {
+        gold -= cost;
+        heroes[i].level++;
+        renderHeroes();
+        updateGold();
+      }
+    }
+
+    function updateGold() {
+      goldDisplay.textContent = gold;
+    }
+
+    function updateEnemy() {
+      enemyHPDisplay.textContent = Math.max(0, Math.floor(enemyHP));
+      hpFill.style.width = (enemyHP / maxHP * 100) + "%";
+    }
+
+    function updateTimer() {
+      timerDisplay.textContent = timer.toFixed(1);
+    }
+
+    document.getElementById("tapButton").addEventListener("click", () => {
+      const clickDamage = 50;
+      enemyHP -= clickDamage;
+      if (enemyHP <= 0) {
+        const reward = 100 + Math.floor(Math.random() * 50);
+        gold += reward;
+        earnedGold += reward;
+        enemyHP = maxHP;
+        timer = 30.0;
+      }
+      updateGold();
+      updateEnemy();
+      earnedGoldDisplay.textContent = earnedGold;
     });
+
+    setInterval(() => {
+      const totalDPS = heroes.reduce((sum, h) => sum + h.dps * h.level, 0);
+      enemyHP -= totalDPS / 10;
+      timer -= 0.1;
+      if (timer <= 0 || enemyHP <= 0) {
+        const reward = 100 + Math.floor(Math.random() * 50);
+        gold += reward;
+        earnedGold += reward;
+        enemyHP = maxHP;
+        timer = 30.0;
+      }
+      updateGold();
+      updateEnemy();
+      updateTimer();
+      earnedGoldDisplay.textContent = earnedGold;
+    }, 100);
+
+    renderHeroes();
+    updateEnemy();
+    updateTimer();
   </script>
 </body>
 </html>
