@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Cosmic Universal Idle PWA</title>
+    <!-- Manifest link for PWA installation -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles for Dark Aesthetic and Glow */
+        :root {
+            --primary-bg: #090919;
+            --container-bg: #121228;
+            --card-bg: #1a1a3a;
+            --accent-violet: #8b5cf6; /* Tailwind purple-500 */
+            --accent-teal: #2dd4bf;   /* Tailwind teal-400 */
+            --glow-color: rgba(139, 92, 246, 0.5); /* Semi-transparent violet glow */
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            color: #e0e0f0;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .game-container {
+            max-width: 1200px;
+            width: 100%;
+            background-color: var(--container-bg);
+            border-radius: 1rem;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 20px var(--glow-color);
+            min-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .resource-card, .upgrade-card, .prestige-card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            transition: all 0.2s;
+        }
+        .resource-card:hover, .upgrade-card:hover {
+            box-shadow: 0 0 10px var(--accent-violet);
+        }
+
+        .tab-button {
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button.active {
+            border-color: var(--accent-teal);
+            color: var(--accent-teal);
+            font-weight: 600;
+            background-color: rgba(45, 212, 191, 0.1);
+        }
+
+        .action-button {
+            background-color: var(--accent-violet);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .action-button:hover {
+            background-color: #a78bfa;
+            transform: translateY(-2px);
+        }
+        .action-button:active {
+            transform: translateY(0);
+        }
+        .action-button:disabled {
+            background-color: #4c1d95;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* Responsive Grid for mobile */
+        @media (max-width: 768px) {
+            .game-container {
+                min-height: 100vh;
+                border-radius: 0;
+            }
+            .grid-cols-3-fixed {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (min-width: 768px) {
+            .grid-cols-3-fixed {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        /* Firebase Status Blink */
+        @keyframes pulse-green {
+            0%, 100% { background-color: #10b981; }
+            50% { background-color: #059669; }
+        }
+        @keyframes pulse-red {
+            0%, 100% { background-color: #f87171; }
+            50% { background-color: #ef4444; }
+        }
+        .status-online { animation: pulse-green 1s infinite; }
+        .status-offline { animation: pulse-red 1s infinite; }
+    </style>
+</head>
+<body>
+
+    <!-- Main Game Container -->
+    <div class="game-container">
+
+        <!-- Header and Resources -->
+        <header class="p-4 md:p-6 border-b border-gray-700/50">
+            <h1 class="text-3xl font-extrabold text-white mb-2 tracking-wider flex items-center justify-between">
+                Cosmic Universe Idle
+                <span id="install-button" onclick="promptInstall()" class="hidden bg-yellow-500 text-gray-900 text-sm font-semibold px-3 py-1 rounded-full cursor-pointer hover:bg-yellow-400 transition">
+                    Install App
+                </span>
+            </h1>
+            <p class="text-sm text-gray-400 mb-4">Current User: <span id="user-id" class="font-mono text-xs">...</span></p>
+
+            <!-- Resource Display Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="resource-card p-3 text-center">
+                    <div class="text-xs text-gray-400 uppercase">Energy</div>
+                    <div id="energy" class="text-2xl font-bold text-teal-400">0.00</div>
+                    <div id="energy-rate" class="text-xs text-green-400 mt-1">+0.00/s</div>
+                </div>
+                <div class="resource-card p-3 text-center">
+                    <div class="text-xs text-gray-400 uppercase">Prestige Tokens (PT)</div>
+                    <div id="prestige-tokens" class="text-2xl font-bold text-violet-400">0</div>
+                </div>
+                <div class="resource-card p-3 text-center">
+                    <div class="text-xs text-gray-400 uppercase">Dark Matter (DM)</div>
+                    <div id="dark-matter" class="text-2xl font-bold text-purple-600">0</div>
+                </div>
+                <div class="resource-card p-3 text-center">
+                    <div class="text-xs text-gray-400 uppercase">Research Points (RP)</div>
+                    <div id="research-points" class="text-2xl font-bold text-cyan-400">0</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content (Tabs) -->
+        <div class="flex flex-1 overflow-hidden">
+
+            <!-- Sidebar/Tabs Navigation (Fixed Width on Desktop, full width on mobile) -->
+            <nav class="w-full md:w-56 flex md:flex-col border-r border-gray-700/50 overflow-x-auto">
+                <button class="tab-button active flex-1 p-3 md:p-4 text-center text-sm md:text-base whitespace-nowrap" data-tab="expansion" onclick="switchTab('expansion')">
+                    🌌 Expansion
+                </button>
+                <button class="tab-button flex-1 p-3 md:p-4 text-center text-sm md:text-base whitespace-nowrap" data-tab="automation" onclick="switchTab('automation')">
+                    ⚙️ Automation
+                </button>
+                <button class="tab-button flex-1 p-3 md:p-4 text-center text-sm md:text-base whitespace-nowrap" data-tab="research" onclick="switchTab('research')">
+                    🔬 Research
+                </button>
+                <button class="tab-button flex-1 p-3 md:p-4 text-center text-sm md:text-base whitespace-nowrap" data-tab="prestige" onclick="switchTab('prestige')">
+                    ✨ Prestige
+                </button>
+            </nav>
+
+            <!-- Tab Content Area -->
+            <main class="flex-1 p-4 md:p-6 overflow-y-auto">
+
+                <!-- Expansion Tab -->
+                <div id="tab-expansion" class="tab-content">
+                    <h2 class="text-2xl font-semibold mb-4 text-white">Universal Expansion</h2>
+
+                    <!-- Primary Action Button -->
+                    <button id="primary-action" onclick="handlePrimaryAction()" class="action-button w-full p-4 rounded-xl text-lg font-bold mb-6 hover:shadow-lg">
+                        GENERATE 1.00 ENERGY
+                    </button>
+
+                    <!-- Upgrades List -->
+                    <div id="upgrades-list" class="space-y-4">
+                        <!-- Upgrades will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Automation Tab -->
+                <div id="tab-automation" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold mb-4 text-white">Automation Systems</h2>
+                    <p class="text-gray-400 mb-6">Automate your core expansion loops. These cost Prestige Tokens (PT).</p>
+
+                    <div id="automation-upgrades" class="space-y-4">
+                        <!-- Automation will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Research Tab (New Feature) -->
+                <div id="tab-research" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold mb-4 text-white">Galactic Research</h2>
+                    <p class="text-gray-400 mb-6">Spend Research Points (RP) for permanent, run-independent bonuses.</p>
+
+                    <!-- Research Points Generation -->
+                    <div class="resource-card p-4 rounded-lg mb-6 flex justify-between items-center">
+                        <span class="text-lg font-medium">Research Points Source:</span>
+                        <button onclick="gainResearchPoints()" id="rp-gain-button" class="action-button px-4 py-2 rounded-lg text-sm font-semibold">
+                            Convert 100 PT to 1 RP
+                        </button>
+                    </div>
+
+                    <div id="research-upgrades" class="space-y-4">
+                        <!-- Research items will be inserted here -->
+                    </div>
+                </div>
+
+
+                <!-- Prestige Tab (Updated with Dark Matter) -->
+                <div id="tab-prestige" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold mb-4 text-white">Prestige & Meta-Prestige</h2>
+                    <p class="text-gray-400 mb-6">Reset your progress for powerful, permanent bonuses.</p>
+
+                    <!-- Prestige Layer 1: Prestige Tokens (PT) -->
+                    <div class="prestige-card p-6 rounded-xl mb-8">
+                        <h3 class="text-xl font-bold mb-3 text-violet-400">Layer I: Galactic Reset (PT)</h3>
+                        <p id="pt-gain-info" class="mb-4 text-gray-300">Reset everything for 0 Prestige Tokens.</p>
+                        <button id="prestige-button" onclick="startPrestige()" class="action-button w-full p-3 rounded-lg text-white font-semibold">
+                            PERFORM GALACTIC RESET
+                        </button>
+                    </div>
+
+                    <!-- Prestige Layer 2: Dark Matter (DM) -->
+                    <div class="prestige-card p-6 rounded-xl bg-purple-900/30 border-purple-600/50">
+                        <h3 class="text-xl font-bold mb-3 text-purple-600">Layer II: Universal Collapse (Dark Matter)</h3>
+                        <p class="mb-4 text-gray-300">Requires 10,000 Total Prestige Tokens across all runs.</p>
+                        <p id="dm-gain-info" class="mb-4 text-gray-300">Total PT Earned: <span id="total-pt-earned">0</span>. Required: 10,000.</p>
+                        <button id="dark-matter-button" onclick="startDarkMatterPrestige()" disabled class="action-button w-full p-3 rounded-lg bg-purple-700/50 text-white font-semibold">
+                            INITIATE UNIVERSAL COLLAPSE (DM)
+                        </button>
+                        <div id="dm-upgrades-list" class="mt-4 space-y-3">
+                            <!-- DM upgrades will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Box (Instead of Alert) -->
+                <div id="message-box" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+                    <div class="bg-gray-800 p-6 rounded-lg max-w-sm w-full text-center shadow-2xl">
+                        <p id="message-text" class="text-lg font-semibold mb-4 text-white"></p>
+                        <button onclick="closeMessageBox()" class="action-button px-4 py-2 rounded-lg font-semibold">OK</button>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- Footer for Status and Saves -->
+        <footer class="p-4 border-t border-gray-700/50 flex justify-between items-center text-xs text-gray-500">
+            <div class="flex items-center space-x-4">
+                <span class="w-3 h-3 rounded-full" id="cloud-status-indicator"></span>
+                <span id="cloud-status" class="transition-colors">Initializing...</span>
+            </div>
+            <p>Game Version 1.2 | Built with Gemini</p>
+        </footer>
+
+    </div>
+
+    <!-- Firebase Imports and Main Script -->
+    <script type="module">
+        // Firebase Core Imports (Global Variables are provided in the environment)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ====================================================================
+        // I. GAME DATA STRUCTURE
+        // ====================================================================
+        const BASE_COST = 10;
+        const COST_MULTIPLIER = 1.25;
+
+        // Global Game State (The master object to be saved/loaded)
+        let data = {
+            energy: 0,
+            pt: 0, // Prestige Tokens
+            dm: 0, // Dark Matter
+            rp: 0, // Research Points
+            totalPTEarned: 0,
+            lastTick: Date.now(),
+            upgrades: {
+                universeExpander: 0, // Base production
+                galaxySynthesizer: 0,
+                dimensionExtractor: 0
+            },
+            automation: {
+                autoClicker: 0, // Auto-clicks the primary action
+                autoBuyExpander: 0, // Auto-buys universeExpander
+            },
+            research: {
+                // Permanent, non-resettable bonuses
+                ptEfficiency: false, // 50% more PT
+                dmPower: false,      // 50% more DM power
+                researchSpeed: false // 2x RP conversion rate
+            },
+            dmUpgrades: {
+                dmBoost: 0, // DM prestige power boost
+            }
+        };
+
+        // Upgrade Definitions
+        const upgradeDefs = [
+            { id: 'universeExpander', name: 'Universe Expander', baseCost: 10, baseRate: 0.1, desc: 'Generates 0.1 Energy/s' },
+            { id: 'galaxySynthesizer', name: 'Galaxy Synthesizer', baseCost: 100, baseRate: 1, desc: 'Generates 1 Energy/s' },
+            { id: 'dimensionExtractor', name: 'Dimension Extractor', baseCost: 500, baseRate: 5, desc: 'Generates 5 Energy/s' }
+        ];
+
+        const automationDefs = [
+            { id: 'autoClicker', name: 'Auto-Clicker', baseCost: 10, maxLevel: 5, effect: 'Crates 1 Primary Click/s (Max 5/s)' },
+            { id: 'autoBuyExpander', name: 'Auto-Expander', baseCost: 50, maxLevel: 1, effect: 'Automatically buys Universe Expander' },
+        ];
+
+        const researchDefs = [
+            { id: 'ptEfficiency', name: 'PT Efficiency', cost: 10, desc: 'Increases PT gain by 50%' },
+            { id: 'dmPower', name: 'Dark Matter Power', cost: 25, desc: 'Increases Dark Matter effect by 50%' },
+            { id: 'researchSpeed', name: 'Research Speed', cost: 50, desc: 'Doubles RP conversion rate' },
+        ];
+
+        const dmUpgradeDefs = [
+            { id: 'dmBoost', name: 'DM Universal Boost', baseCost: 1, baseEffect: 1.05, desc: 'Energy rate multiplier (1.05x per level)' },
+        ];
+
+
+        // ====================================================================
+        // II. FIREBASE & AUTH SETUP
+        // ====================================================================
+        let app, db, auth;
+        let userId = 'loading';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        /**
+         * Initializes Firebase and authenticates the user.
+         */
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config not found.");
+                document.getElementById('cloud-status').textContent = "Cloud: Disabled (No Config)";
+                document.getElementById('cloud-status-indicator').classList.add('status-offline');
+                return;
+            }
+
+            setLogLevel('debug'); // Enable Firestore logging
+
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase Auth Error:", error);
+                document.getElementById('cloud-status').textContent = `Auth Error: ${error.code}`;
+                document.getElementById('cloud-status-indicator').classList.add('status-offline');
+                return;
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    document.getElementById('user-id').textContent = userId;
+                    document.getElementById('cloud-status').textContent = "Cloud: Online, Loading...";
+                    document.getElementById('cloud-status-indicator').classList.remove('status-offline');
+                    document.getElementById('cloud-status-indicator').classList.add('status-online');
+                    loadData();
+                } else {
+                    document.getElementById('user-id').textContent = 'Signed Out';
+                }
+            });
+        }
+
+        /**
+         * Get the Firestore document path for the current user's data.
+         * @returns {string} The path to the document.
+         */
+        function getDocRef() {
+            // Private data storage
+            return doc(db, `/artifacts/${appId}/users/${userId}/gameData/save`);
+        }
+
+        /**
+         * Loads game data from Firestore or initializes if none found.
+         */
+        function loadData() {
+            if (!db || userId === 'loading') return;
+
+            const docRef = getDocRef();
+
+            onSnapshot(docRef, (doc) => {
+                if (doc.exists()) {
+                    const loadedData = doc.data();
+                    // Merge loaded data with default structure to prevent missing properties
+                    data = { ...data, ...loadedData };
+                    data.lastTick = Date.now(); // Reset lastTick on load
+                    showMessageBox(`Game loaded successfully for user: ${userId.substring(0, 8)}...`);
+                    document.getElementById('cloud-status').textContent = "Cloud: Ready";
+                } else {
+                    // Initial save if no document exists
+                    saveData();
+                    document.getElementById('cloud-status').textContent = "Cloud: New Save Created";
+                }
+                updateDisplay();
+                calculateAllRates();
+            }, (error) => {
+                console.error("Error listening to document:", error);
+                document.getElementById('cloud-status').textContent = `Listen Error: ${error.code}`;
+                document.getElementById('cloud-status-indicator').classList.remove('status-online');
+                document.getElementById('cloud-status-indicator').classList.add('status-offline');
+            });
+        }
+
+        /**
+         * Saves game data to Firestore.
+         */
+        async function saveData() {
+            if (!db || userId === 'loading') return;
+
+            try {
+                await setDoc(getDocRef(), data, { merge: true });
+                // Update status only if successful
+                document.getElementById('cloud-status').textContent = "Cloud: Saved";
+            } catch (error) {
+                console.error("Save Error:", error);
+                document.getElementById('cloud-status').textContent = `Save Error: ${error.code}`;
+            }
+        }
+
+        // ====================================================================
+        // III. GAME LOGIC & FUNCTIONS
+        // ====================================================================
+
+        /**
+         * Formats a number for display.
+         * @param {number} num
+         * @returns {string}
+         */
+        function formatNumber(num) {
+            if (num < 1000) return num.toFixed(2);
+            if (num < 1000000) return (num / 1000).toFixed(2) + 'K';
+            if (num < 1000000000) return (num / 1000000).toFixed(2) + 'M';
+            return (num / 1000000000).toFixed(2) + 'B+';
+        }
+
+        /**
+         * Calculates the cost of an upgrade based on current level.
+         * @param {number} level - current level of the upgrade
+         * @param {number} baseCost - starting cost
+         * @returns {number} The cost of the next level.
+         */
+        function calculateCost(level, baseCost) {
+            return baseCost * Math.pow(COST_MULTIPLIER, level);
+        }
+
+        /**
+         * Calculates the total Energy production rate per second.
+         * @returns {number} The total Energy rate.
+         */
+        function calculateEnergyRate() {
+            let rate = 0;
+            // Base upgrade production
+            for (const def of upgradeDefs) {
+                rate += data.upgrades[def.id] * def.baseRate;
+            }
+
+            // Apply Dark Matter Boost (Additive multiplier to base rate)
+            let dmMultiplier = 1;
+            if (data.research.dmPower) { // Research Bonus
+                dmMultiplier *= 1.5;
+            }
+            // DM Upgrade Boosts
+            for (let i = 0; i < data.dmUpgrades.dmBoost; i++) {
+                dmMultiplier *= dmUpgradeDefs[0].baseEffect;
+            }
+
+            return rate * dmMultiplier;
+        }
+
+        /**
+         * Recalculates all derived rates and updates rate display.
+         */
+        function calculateAllRates() {
+            const energyRate = calculateEnergyRate();
+            document.getElementById('energy-rate').textContent = `+${formatNumber(energyRate)}/s`;
+        }
+
+        /**
+         * The core game loop tick.
+         */
+        function tick() {
+            const now = Date.now();
+            const elapsed = (now - data.lastTick) / 1000; // seconds
+
+            // 1. Production
+            const energyRate = calculateEnergyRate();
+            data.energy += energyRate * elapsed;
+
+            // 2. Automation Ticks
+            // Auto Clicker
+            const clicksPerTick = data.automation.autoClicker * elapsed;
+            data.energy += clicksPerTick * 1.00; // 1 click = 1 Energy
+
+            // Auto Buy Expander
+            if (data.automation.autoBuyExpander > 0) {
+                const def = upgradeDefs[0];
+                const cost = calculateCost(data.upgrades[def.id], def.baseCost);
+                if (data.energy >= cost) {
+                    data.energy -= cost;
+                    data.upgrades[def.id]++;
+                    calculateAllRates();
+                    // Save on auto-buy to prevent loss if app is closed immediately after
+                    saveData();
+                }
+            }
+
+
+            // 3. Update last tick time
+            data.lastTick = now;
+
+            // 4. Update UI
+            updateDisplay();
+        }
+
+        /**
+         * Handles the primary action (manual click/tap).
+         */
+        window.handlePrimaryAction = function() {
+            data.energy += 1.00;
+            updateDisplay();
+        }
+
+        /**
+         * Buys an upgrade.
+         * @param {string} id - The ID of the upgrade to buy.
+         */
+        window.buyUpgrade = function(id) {
+            const def = upgradeDefs.find(u => u.id === id);
+            if (!def) return;
+
+            const cost = calculateCost(data.upgrades[id], def.baseCost);
+            if (data.energy >= cost) {
+                data.energy -= cost;
+                data.upgrades[id]++;
+                calculateAllRates();
+                saveData();
+                updateDisplay();
+            } else {
+                showMessageBox(`Not enough Energy to buy ${def.name}.`);
+            }
+        }
+
+        /**
+         * Buys an automation upgrade.
+         * @param {string} id - The ID of the automation to buy.
+         */
+        window.buyAutomation = function(id) {
+            const def = automationDefs.find(a => a.id === id);
+            if (!def) return;
+
+            const cost = calculateCost(data.automation[id], def.baseCost);
+            if (data.automation[id] >= def.maxLevel) {
+                 showMessageBox(`The ${def.name} is already at its maximum level (${def.maxLevel}).`);
+                 return;
+            }
+
+            if (data.pt >= cost) {
+                data.pt -= cost;
+                data.automation[id]++;
+                saveData();
+                updateDisplay();
+            } else {
+                showMessageBox(`Not enough Prestige Tokens (PT) to buy ${def.name}.`);
+            }
+        }
+
+        /**
+         * Activates a research upgrade.
+         * @param {string} id - The ID of the research to buy.
+         */
+        window.buyResearch = function(id) {
+            const def = researchDefs.find(r => r.id === id);
+            if (!def) return;
+
+            if (data.research[id]) {
+                showMessageBox(`You have already completed the ${def.name} research.`);
+                return;
+            }
+
+            if (data.rp >= def.cost) {
+                data.rp -= def.cost;
+                data.research[id] = true;
+                calculateAllRates(); // Research can affect rates
+                saveData();
+                updateDisplay();
+            } else {
+                showMessageBox(`Not enough Research Points (RP) to complete ${def.name}.`);
+            }
+        }
+
+        /**
+         * Converts PT into Research Points (RP).
+         */
+        window.gainResearchPoints = function() {
+            const conversionRate = data.research.researchSpeed ? 2 : 1;
+            const ptCost = 100 / conversionRate;
+            const rpGain = 1;
+
+            if (data.pt >= ptCost) {
+                data.pt -= ptCost;
+                data.rp += rpGain;
+                saveData();
+                updateDisplay();
+                showMessageBox(`Converted ${ptCost} PT into 1 Research Point!`);
+            } else {
+                showMessageBox(`Need ${ptCost} Prestige Tokens to convert to 1 Research Point.`);
+            }
+        }
+
+        /**
+         * Calculates the Prestige Tokens (PT) gained upon reset.
+         * @returns {number} PT to be gained.
+         */
+        function calculatePrestigeGain() {
+            // Formula: Logarithmic scaling based on Energy, e.g., (Energy / 1000)^0.5
+            return Math.floor(Math.pow(data.energy / 10000, 0.5));
+        }
+
+        /**
+         * Resets the game state and applies Prestige Tokens.
+         */
+        window.startPrestige = function() {
+            const gain = calculatePrestigeGain();
+            if (gain < 1) {
+                showMessageBox("You need at least 10,000 Energy to gain 1 Prestige Token.");
+                return;
+            }
+
+            // 1. Calculate new PT
+            let ptGain = gain;
+            if (data.research.ptEfficiency) {
+                ptGain = Math.floor(ptGain * 1.5);
+            }
+
+            data.pt += ptGain;
+            data.totalPTEarned += ptGain;
+            showMessageBox(`Prestige successful! Gained ${ptGain} Prestige Tokens.`);
+
+            // 2. Reset Energy, Upgrades, Automation
+            data.energy = 0;
+            data.upgrades = { universeExpander: 0, galaxySynthesizer: 0, dimensionExtractor: 0 };
+            data.automation = { autoClicker: 0, autoBuyExpander: 0 };
+
+            // 3. Keep PT, DM, RP, Research, DMUpgrades
+            data.lastTick = Date.now();
+            saveData();
+            calculateAllRates();
+            updateDisplay();
+        }
+
+        /**
+         * Handles the second-layer Prestige (Dark Matter).
+         */
+        window.startDarkMatterPrestige = function() {
+             if (data.totalPTEarned < 10000) {
+                showMessageBox("You need 10,000 Total Prestige Tokens across all runs to perform a Universal Collapse.");
+                return;
+            }
+
+            // Dark Matter is based on Total PT earned.
+            const dmGain = Math.floor(data.totalPTEarned / 10000);
+            data.dm += dmGain;
+            showMessageBox(`Universal Collapse successful! Gained ${dmGain} Dark Matter.`);
+
+            // Deep Reset: Resets everything except DM, DMUpgrades, and Research
+            data = {
+                energy: 0,
+                pt: 0,
+                totalPTEarned: 0, // Total PT Earned resets for the next DM gain
+                lastTick: Date.now(),
+                upgrades: { universeExpander: 0, galaxySynthesizer: 0, dimensionExtractor: 0 },
+                automation: { autoClicker: 0, autoBuyExpander: 0 },
+                research: data.research, // KEEP RESEARCH
+                dm: data.dm, // KEEP DARK MATTER
+                rp: data.rp, // KEEP RP
+                dmUpgrades: data.dmUpgrades // KEEP DM UPGRADES
+            };
+
+            saveData();
+            calculateAllRates();
+            updateDisplay();
+        }
+
+        /**
+         * Buys a Dark Matter upgrade.
+         */
+        window.buyDMUpgrade = function(id) {
+            const def = dmUpgradeDefs.find(u => u.id === id);
+            if (!def) return;
+
+            const cost = calculateCost(data.dmUpgrades[id], def.baseCost);
+            if (data.dm >= cost) {
+                data.dm -= cost;
+                data.dmUpgrades[id]++;
+                calculateAllRates();
+                saveData();
+                updateDisplay();
+            } else {
+                showMessageBox(`Not enough Dark Matter (DM) to buy ${def.name}.`);
+            }
+        }
+
+
+        // ====================================================================
+        // IV. UI RENDERING
+        // ====================================================================
+
+        /**
+         * Creates the HTML for a generic upgrade card.
+         * @param {object} def - Upgrade definition.
+         * @param {number} currentLevel - Current level of the upgrade.
+         * @param {number} nextCost - Cost of the next level.
+         * @param {string} buyFunction - The JavaScript function to call on click.
+         * @param {string} resourceName - The resource being spent (e.g., 'Energy', 'PT', 'RP').
+         * @param {string} status - Optional status message (e.g., 'MAX').
+         * @returns {string} The HTML string.
+         */
+        function createUpgradeCard(def, currentLevel, nextCost, buyFunction, resourceName, status = null) {
+            const disabled = status === 'MAX' || (data[resourceName.toLowerCase()] < nextCost && status !== 'BOUGHT') ? 'disabled' : '';
+            const costText = status === 'MAX' || status === 'BOUGHT' ? (status === 'MAX' ? 'MAX LEVEL' : 'COMPLETED') : `Cost: ${formatNumber(nextCost)} ${resourceName}`;
+            const buttonColor = disabled ? 'bg-gray-700' : 'action-button';
+            const buttonText = status === 'BOUGHT' ? 'Completed' : (status === 'MAX' ? 'Max' : 'Buy');
+            const levelText = status === 'BOUGHT' ? '' : `Level: ${currentLevel}`;
+
+            return `
+                <div class="upgrade-card p-4 rounded-lg flex justify-between items-center transition">
+                    <div>
+                        <h3 class="text-lg font-semibold text-teal-300">${def.name}</h3>
+                        <p class="text-sm text-gray-400">${def.desc}</p>
+                        <p class="text-sm font-mono mt-1 text-gray-300">${levelText}</p>
+                    </div>
+                    <button onclick="${buyFunction}('${def.id}')" ${disabled} class="${buttonColor} px-4 py-2 rounded-lg text-white font-semibold flex-shrink-0 ml-4 text-center">
+                        <div class="text-sm">${costText}</div>
+                        <div class="text-base font-bold">${buttonText}</div>
+                    </button>
+                </div>
+            `;
+        }
+
+        /**
+         * Renders all upgrade sections.
+         */
+        function renderUpgrades() {
+            // 1. Expansion Upgrades
+            let html = '';
+            for (const def of upgradeDefs) {
+                const cost = calculateCost(data.upgrades[def.id], def.baseCost);
+                html += createUpgradeCard(def, data.upgrades[def.id], cost, 'buyUpgrade', 'Energy');
+            }
+            document.getElementById('upgrades-list').innerHTML = html;
+
+            // 2. Automation Upgrades
+            html = '';
+            for (const def of automationDefs) {
+                const cost = calculateCost(data.automation[def.id], def.baseCost);
+                const status = data.automation[def.id] >= def.maxLevel ? 'MAX' : null;
+                html += createUpgradeCard(def, data.automation[def.id], cost, 'buyAutomation', 'PT', status);
+            }
+            document.getElementById('automation-upgrades').innerHTML = html;
+
+            // 3. Research Upgrades
+            html = '';
+            for (const def of researchDefs) {
+                const cost = def.cost;
+                const status = data.research[def.id] ? 'BOUGHT' : null;
+                html += createUpgradeCard(def, 1, cost, 'buyResearch', 'RP', status);
+            }
+            document.getElementById('research-upgrades').innerHTML = html;
+
+            // 4. Dark Matter Upgrades
+            html = '';
+            for (const def of dmUpgradeDefs) {
+                const cost = calculateCost(data.dmUpgrades[def.id], def.baseCost);
+                // Calculate current effect for display
+                const effect = (def.baseEffect ** data.dmUpgrades[def.id]).toFixed(3);
+                const nextEffect = (def.baseEffect ** (data.dmUpgrades[def.id] + 1)).toFixed(3);
+                html += `
+                    <div class="prestige-card p-4 rounded-lg flex justify-between items-center transition">
+                        <div>
+                            <h3 class="text-lg font-semibold text-purple-400">${def.name} (Lvl ${data.dmUpgrades[def.id]})</h3>
+                            <p class="text-sm text-gray-400">Current Multiplier: ${effect}x</p>
+                            <p class="text-sm font-mono mt-1 text-gray-300">${def.desc}</p>
+                        </div>
+                        <button onclick="buyDMUpgrade('${def.id}')" ${data.dm < cost ? 'disabled' : ''} class="${data.dm < cost ? 'bg-gray-700' : 'action-button'} px-4 py-2 rounded-lg text-white font-semibold flex-shrink-0 ml-4 text-center">
+                            <div class="text-sm">Cost: ${formatNumber(cost)} DM</div>
+                            <div class="text-base font-bold">Buy</div>
+                        </button>
+                    </div>
+                `;
+            }
+            document.getElementById('dm-upgrades-list').innerHTML = html;
+        }
+
+        /**
+         * Updates all dynamic text and button states on the screen.
+         */
+        window.updateDisplay = function() {
+            // Resource Display
+            document.getElementById('energy').textContent = formatNumber(data.energy);
+            document.getElementById('prestige-tokens').textContent = formatNumber(data.pt);
+            document.getElementById('dark-matter').textContent = formatNumber(data.dm);
+            document.getElementById('research-points').textContent = formatNumber(data.rp);
+
+            // Prestige Gain Info
+            const ptGain = calculatePrestigeGain();
+            document.getElementById('pt-gain-info').textContent = `Reset for ${ptGain} Prestige Tokens.`;
+            document.getElementById('prestige-button').disabled = ptGain < 1;
+            document.getElementById('prestige-button').textContent = ptGain < 1 ? 'Needs 10K Energy for 1 PT' : `PERFORM GALACTIC RESET (+${ptGain} PT)`;
+
+            // Dark Matter Info
+            document.getElementById('total-pt-earned').textContent = formatNumber(data.totalPTEarned);
+            const canDM = data.totalPTEarned >= 10000;
+            document.getElementById('dark-matter-button').disabled = !canDM;
+            document.getElementById('dark-matter-button').textContent = canDM ? 'INITIATE UNIVERSAL COLLAPSE (+1 DM)' : `Required: ${formatNumber(10000 - data.totalPTEarned)} more PT`;
+
+            // Research Point Conversion Button
+            const conversionRate = data.research.researchSpeed ? 2 : 1;
+            const ptCost = 100 / conversionRate;
+            document.getElementById('rp-gain-button').textContent = `Convert ${ptCost} PT to 1 RP`;
+            document.getElementById('rp-gain-button').disabled = data.pt < ptCost;
+
+            // Render all upgrade sections
+            renderUpgrades();
+        }
+
+        /**
+         * Tab switching functionality.
+         * @param {string} tabId - The ID of the tab content to show (e.g., 'expansion').
+         */
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
+        }
+
+        /**
+         * Shows a custom message box.
+         * @param {string} message - The message to display.
+         */
+        window.showMessageBox = function(message) {
+            document.getElementById('message-text').textContent = message;
+            document.getElementById('message-box').classList.remove('hidden');
+            document.getElementById('message-box').classList.add('flex');
+        }
+
+        /**
+         * Closes the custom message box.
+         */
+        window.closeMessageBox = function() {
+            document.getElementById('message-box').classList.add('hidden');
+            document.getElementById('message-box').classList.remove('flex');
+        }
+
+        // ====================================================================
+        // V. PWA INSTALLATION & SERVICE WORKER
+        // ====================================================================
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-button').classList.remove('hidden');
+        });
+
+        window.promptInstall = () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    deferredPrompt = null;
+                    document.getElementById('install-button').classList.add('hidden');
+                });
+            }
+        };
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker registered: ', reg))
+                    .catch(err => console.log('Service Worker registration failed: ', err));
+            });
+        }
+
+        // ====================================================================
+        // VI. INITIALIZATION
+        // ====================================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            setInterval(tick, 50); // Game loop runs every 50ms (20 ticks per second)
+            // Initial render call will happen after loadData is complete
+        });
+
+    </script>
+
+</body>
+</html>
