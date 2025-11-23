@@ -1,14 +1,48 @@
 {
   "name": "Cosmic Clicker",
-  "short_name": "Cosmic",
-  "start_url": "./index.html",
+  "short_name": "CosmicClicker",
+  "description": "Tap to collect Cosmic Energy, unlock upgrades, prestige layers, quests, events, achievements, and mascot blessings in a dark pastel anime themed idle clicker.",
+  "start_url": "index.html",
   "display": "standalone",
-  "theme_color": "#1f1424",
-  "background_color": "#0f0b12",
+  "background_color": "#1a0933",
+  "theme_color": "#fbcfe8",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "icon-512.png",
+      "src": "icons/icon-48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "splash/splash-640x1136.png",
+      "sizes": "640x1136",
+      "type": "image/png"
+    },
+    {
+      "src": "splash/splash-1242x2208.png",
+      "sizes": "1242x2208",
+      "type": "image/png"
+    },
+    {
+      "src": "splash/splash-1536x2048.png",
+      "sizes": "1536x2048",
       "type": "image/png"
     }
   ]
