@@ -1,33 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Cosmic Clicker</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css" />
-  <script defer src="main.js"></script>
-  <script defer src="systems.js"></script>
-  <script defer src="ui.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(to bottom, #2d0a4e, #1a0933, #000);
+      color: #fbcfe8;
+      margin: 0;
+      text-align: center;
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem; background: rgba(0,0,0,0.4);
+    }
+    .tab-btn {
+      padding: 0.5rem 1rem; margin: 0.25rem;
+      border-radius: 0.25rem; background: #6b21a8; color: #fbcfe8;
+      cursor: pointer;
+    }
+    .tab-btn:hover { background: #7e22ce; }
+    .tab-panel { padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 0.5rem; margin-top: 1rem; }
+    .hidden { display: none; }
+    #tapButton {
+      width: 120px; height: 120px; border-radius: 50%;
+      background: linear-gradient(to right,#ec4899,#9333ea);
+      color: white; font-size: 1.25rem; margin-top: 1rem;
+    }
+    #achievementPopup {
+      position: fixed; bottom: 1rem; right: 1rem;
+      background: #4c1d95; color: #fbcfe8;
+      padding: 1rem; border-radius: 0.5rem;
+      display: none;
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-b from-purple-900 via-indigo-900 to-black text-pink-200 font-sans">
-
+<body>
   <!-- Header -->
-  <header class="flex items-center justify-between p-4 bg-black bg-opacity-40">
-    <div class="flex items-center space-x-2">
-      <img src="assets/mascot.png" alt="Mascot" class="w-12 h-12 rounded-full border-2 border-pink-300 animate-bounce" />
-      <h1 class="text-2xl font-bold text-pink-300">Cosmic Clicker</h1>
+  <header>
+    <div style="display:flex;align-items:center;gap:0.5rem">
+      <img src="assets/mascot.png" alt="Mascot" style="width:48px;height:48px;border-radius:50%;border:2px solid #fbcfe8" />
+      <h1>Cosmic Clicker</h1>
     </div>
-    <button id="installBtn" class="px-3 py-1 bg-pink-600 rounded hover:bg-pink-500">Install</button>
   </header>
 
   <!-- Main Game Area -->
-  <main class="flex flex-col items-center justify-center p-6">
-    <div id="energyDisplay" class="text-4xl font-bold mb-4">Cosmic Energy: 0</div>
-    <button id="tapButton" class="w-40 h-40 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 shadow-lg hover:scale-105 transform transition">
-      Tap!
-    </button>
-    <div id="currencyDisplay" class="mt-4 space-y-1 text-center">
+  <main>
+    <div id="energyDisplay" style="font-size:2rem;font-weight:bold;margin-top:1rem">Cosmic Energy: 0</div>
+    <button id="tapButton">Tap!</button>
+    <div id="currencyDisplay" style="margin-top:1rem">
       <p>Stardust: <span id="stardust">0</span></p>
       <p>Dark Matter: <span id="darkmatter">0</span></p>
       <p>Relics: <span id="relics">0</span></p>
@@ -36,7 +58,7 @@
   </main>
 
   <!-- Tabs -->
-  <nav class="flex flex-wrap justify-center bg-black bg-opacity-40 p-2">
+  <nav style="display:flex;flex-wrap:wrap;justify-content:center;background:rgba(0,0,0,0.4);padding:0.5rem">
     <button class="tab-btn" data-tab="home">Home</button>
     <button class="tab-btn" data-tab="upgrades">Upgrades</button>
     <button class="tab-btn" data-tab="shop">Shop</button>
@@ -53,33 +75,77 @@
   </nav>
 
   <!-- Tab Content -->
-  <section id="tab-content" class="p-4">
+  <section id="tab-content">
     <div id="home" class="tab-panel">Welcome to Cosmic Clicker! Tap to collect energy.</div>
-    <div id="upgrades" class="tab-panel hidden"></div>
-    <div id="shop" class="tab-panel hidden"></div>
-    <div id="prestige" class="tab-panel hidden"></div>
-    <div id="quests" class="tab-panel hidden"></div>
-    <div id="events" class="tab-panel hidden"></div>
-    <div id="achievements" class="tab-panel hidden"></div>
-    <div id="leaderboard" class="tab-panel hidden"></div>
-    <div id="inventory" class="tab-panel hidden"></div>
-    <div id="crafting" class="tab-panel hidden"></div>
-    <div id="settings" class="tab-panel hidden"></div>
-    <div id="stats" class="tab-panel hidden"></div>
+    <div id="upgrades" class="tab-panel hidden">Upgrade your generators here.</div>
+    <div id="shop" class="tab-panel hidden">Buy items with Stardust.</div>
+    <div id="prestige" class="tab-panel hidden">Prestige resets for multipliers.</div>
+    <div id="quests" class="tab-panel hidden">Complete quests for rewards.</div>
+    <div id="events" class="tab-panel hidden">Special cosmic events appear here.</div>
+    <div id="achievements" class="tab-panel hidden">Track your achievements.</div>
+    <div id="leaderboard" class="tab-panel hidden">Local leaderboard.</div>
+    <div id="inventory" class="tab-panel hidden">Your collected items.</div>
+    <div id="crafting" class="tab-panel hidden">Forge relics and cores.</div>
+    <div id="settings" class="tab-panel hidden">Game settings.</div>
+    <div id="stats" class="tab-panel hidden">Detailed stats.</div>
     <div id="mascot" class="tab-panel hidden">
-      <img src="assets/mascot.png" alt="Mascot" class="w-32 h-32 mx-auto animate-pulse" />
-      <p class="text-center mt-2">Mascot Level: <span id="mascotLevel">1</span></p>
-      <p class="text-center">Relationship: <span id="mascotRelationship">0%</span></p>
+      <img src="assets/mascot.png" alt="Mascot" style="width:96px;height:96px;margin:auto" />
+      <p>Mascot Level: <span id="mascotLevel">1</span></p>
+      <p>Relationship: <span id="mascotRelationship">0%</span></p>
     </div>
   </section>
 
   <!-- Achievement Popup -->
-  <div id="achievementPopup" class="hidden fixed bottom-4 right-4 bg-purple-800 text-pink-200 p-4 rounded shadow-lg animate-bounce">
-    Achievement Unlocked!
-  </div>
+  <div id="achievementPopup">Achievement Unlocked!</div>
 
-  <!-- Background Music -->
-  <audio id="bgMusic" src="audio/background.mp3" loop autoplay></audio>
+  <script>
+    // Core game progression
+    let energy = 0, stardust = 0, darkmatter = 0, relics = 0, cores = 0;
+    const energyDisplay = document.getElementById("energyDisplay");
+    const tapButton = document.getElementById("tapButton");
+    const stardustDisplay = document.getElementById("stardust");
+    const darkmatterDisplay = document.getElementById("darkmatter");
+    const relicsDisplay = document.getElementById("relics");
+    const coresDisplay = document.getElementById("cores");
+    const achievementPopup = document.getElementById("achievementPopup");
 
+    tapButton.addEventListener("click", () => {
+      energy++;
+      energyDisplay.textContent = "Cosmic Energy: " + energy;
+      if (energy % 10 === 0) {
+        stardust++;
+        stardustDisplay.textContent = stardust;
+        showAchievement("Collected " + energy + " Energy!");
+      }
+      if (energy % 50 === 0) {
+        darkmatter++;
+        darkmatterDisplay.textContent = darkmatter;
+      }
+      if (energy % 100 === 0) {
+        relics++;
+        relicsDisplay.textContent = relics;
+      }
+      if (energy % 200 === 0) {
+        cores++;
+        coresDisplay.textContent = cores;
+      }
+    });
+
+    function showAchievement(text) {
+      achievementPopup.textContent = text;
+      achievementPopup.style.display = "block";
+      setTimeout(() => { achievementPopup.style.display = "none"; }, 2000);
+    }
+
+    // Tab switching
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const tabPanels = document.querySelectorAll(".tab-panel");
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        tabPanels.forEach(panel => panel.classList.add("hidden"));
+        document.getElementById(btn.dataset.tab).classList.remove("hidden");
+      });
+    });
+  </script>
 </body>
 </html>
