@@ -3,95 +3,105 @@
 <head>
   <meta charset="UTF-8">
   <title>Cosmic Clicker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to bottom, #1a0933, #2d0a4e);
-      color: #fbcfe8;
+      font-family: 'Orbitron', sans-serif;
+      background: #0d0d0d;
+      color: #e0e0e0;
     }
     header {
-      background: #000000aa;
+      background: #1a1a1a;
       padding: 1rem;
       text-align: center;
       font-size: 1.5rem;
       font-weight: bold;
-      border-bottom: 2px solid #9333ea;
+      border-bottom: 2px solid #00ffff;
+      text-transform: uppercase;
     }
     .container {
       display: flex;
       height: calc(100vh - 80px);
     }
     .left-panel {
-      width: 40%;
-      background: #2d0a4e;
-      border-right: 2px solid #9333ea;
+      width: 35%;
+      background: #1a1a1a;
+      border-right: 1px solid #333;
       overflow-y: auto;
       padding: 1rem;
     }
     .hero {
-      background: #1a0933;
-      border: 1px solid #9333ea;
-      border-radius: 8px;
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
+      background: #0d0d0d;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 0 8px rgba(0,255,255,0.1);
     }
-    .hero h3 {
-      margin: 0;
-      font-size: 1.1rem;
-    }
+    .hero h3 { margin: 0; font-size: 1.1rem; }
     .hero button {
-      margin-top: 0.25rem;
-      padding: 0.25rem 0.5rem;
-      background: #9333ea;
-      color: white;
-      border: none;
+      margin-top: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      background: #0d0d0d;
+      border: 1px solid #00ffff;
+      color: #00ffff;
       border-radius: 4px;
       cursor: pointer;
+      text-transform: uppercase;
+    }
+    .hero button:hover {
+      background: #00ffff;
+      color: #0d0d0d;
+      box-shadow: 0 0 10px #00ffff;
     }
     .right-panel {
-      width: 60%;
-      padding: 1rem;
+      width: 65%;
+      padding: 2rem;
       text-align: center;
-      position: relative;
     }
     .enemy {
-      margin-top: 2rem;
-      background: #1a0933;
-      border: 2px solid #9333ea;
-      border-radius: 12px;
-      padding: 1rem;
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 1.5rem;
+      box-shadow: 0 0 12px rgba(255,0,255,0.2);
     }
-    .enemy img {
-      width: 120px;
-      height: auto;
-    }
+    .enemy img { width: 140px; }
     .hp-bar {
       height: 20px;
-      background: #4c1d95;
+      background: #333;
       border-radius: 10px;
-      margin: 0.5rem 0;
+      margin: 1rem 0;
       overflow: hidden;
+      box-shadow: inset 0 0 6px #000;
     }
     .hp-fill {
       height: 100%;
-      background: #f43f5e;
+      background: linear-gradient(to right, #00ff99, #ff3366);
       width: 100%;
       transition: width 0.3s ease;
+      box-shadow: 0 0 8px rgba(0,255,255,0.4);
     }
     #tapButton {
       margin-top: 1rem;
       padding: 1rem 2rem;
       font-size: 1.2rem;
-      background: linear-gradient(to right, #ec4899, #9333ea);
-      color: white;
-      border: none;
-      border-radius: 8px;
+      background: #0d0d0d;
+      border: 2px solid #ff00ff;
+      color: #ff00ff;
+      border-radius: 6px;
       cursor: pointer;
+      text-transform: uppercase;
+    }
+    #tapButton:hover {
+      background: #ff00ff;
+      color: #0d0d0d;
+      box-shadow: 0 0 12px #ff00ff;
     }
     .top-bar {
       font-size: 1.2rem;
       margin-bottom: 1rem;
+      color: #00ffff;
     }
   </style>
 </head>
@@ -100,9 +110,7 @@
   <div class="container">
     <div class="left-panel">
       <div class="top-bar">Gold: <span id="gold">0</span></div>
-      <div id="heroList">
-        <!-- Heroes will be injected here -->
-      </div>
+      <div id="heroList"></div>
     </div>
     <div class="right-panel">
       <div class="enemy">
@@ -112,7 +120,7 @@
         <p>HP: <span id="enemyHP">1000</span></p>
         <p>Time Left: <span id="timer">30.0</span> sec</p>
         <p>Gold Earned: <span id="earnedGold">0</span></p>
-        <button id="tapButton">Attack!</button>
+        <button id="tapButton">Attack</button>
       </div>
     </div>
   </div>
@@ -163,54 +171,14 @@
       }
     }
 
-    function updateGold() {
-      goldDisplay.textContent = gold;
-    }
-
+    function updateGold() { goldDisplay.textContent = gold; }
     function updateEnemy() {
       enemyHPDisplay.textContent = Math.max(0, Math.floor(enemyHP));
       hpFill.style.width = (enemyHP / maxHP * 100) + "%";
     }
-
-    function updateTimer() {
-      timerDisplay.textContent = timer.toFixed(1);
-    }
+    function updateTimer() { timerDisplay.textContent = timer.toFixed(1); }
 
     document.getElementById("tapButton").addEventListener("click", () => {
       const clickDamage = 50;
       enemyHP -= clickDamage;
-      if (enemyHP <= 0) {
-        const reward = 100 + Math.floor(Math.random() * 50);
-        gold += reward;
-        earnedGold += reward;
-        enemyHP = maxHP;
-        timer = 30.0;
-      }
-      updateGold();
-      updateEnemy();
-      earnedGoldDisplay.textContent = earnedGold;
-    });
-
-    setInterval(() => {
-      const totalDPS = heroes.reduce((sum, h) => sum + h.dps * h.level, 0);
-      enemyHP -= totalDPS / 10;
-      timer -= 0.1;
-      if (timer <= 0 || enemyHP <= 0) {
-        const reward = 100 + Math.floor(Math.random() * 50);
-        gold += reward;
-        earnedGold += reward;
-        enemyHP = maxHP;
-        timer = 30.0;
-      }
-      updateGold();
-      updateEnemy();
-      updateTimer();
-      earnedGoldDisplay.textContent = earnedGold;
-    }, 100);
-
-    renderHeroes();
-    updateEnemy();
-    updateTimer();
-  </script>
-</body>
-</html>
+      if (enemyHP <= 
