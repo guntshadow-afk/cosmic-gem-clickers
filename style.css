@@ -1,0 +1,73 @@
+/* Import Tailwind via CDN in index.html head, so here we add custom overrides */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark pastel anime theme overrides */
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(to bottom, #2d0a4e, #1a0933, #000000);
+  color: #fbcfe8;
+}
+
+/* Tab buttons */
+.tab-btn {
+  @apply px-3 py-2 m-1 rounded bg-purple-700 text-pink-200 hover:bg-purple-600 transition;
+}
+
+.tab-panel {
+  @apply p-4 bg-black bg-opacity-30 rounded shadow-lg;
+}
+
+/* Hidden utility */
+.hidden {
+  display: none;
+}
+
+/* Mascot animations */
+@keyframes pulseGlow {
+  0% { transform: scale(1); filter: drop-shadow(0 0 5px #fbcfe8); }
+  50% { transform: scale(1.05); filter: drop-shadow(0 0 15px #fbcfe8); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 5px #fbcfe8); }
+}
+
+.animate-pulse {
+  animation: pulseGlow 2s infinite;
+}
+
+/* Achievement popup */
+#achievementPopup {
+  animation: popupSlide 1s ease-in-out;
+}
+
+@keyframes popupSlide {
+  0% { transform: translateY(100%); opacity: 0; }
+  20% { transform: translateY(0); opacity: 1; }
+  80% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+/* Floating tap particles */
+.tap-particle {
+  position: absolute;
+  font-size: 1.2rem;
+  color: #fbcfe8;
+  animation: floatUp 1s ease-out forwards;
+}
+
+@keyframes floatUp {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-50px); opacity: 0; }
+}
+
+/* Cosmic background animation */
+@keyframes cosmicBackground {
+  0% { background-position: 0 0; }
+  100% { background-position: 1000px 1000px; }
+}
+
+body {
+  background-image: radial-gradient(circle at center, #2d0a4e 0%, #1a0933 100%);
+  background-size: 2000px 2000px;
+  animation: cosmicBackground 60s linear infinite;
+}
